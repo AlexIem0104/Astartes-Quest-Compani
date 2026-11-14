@@ -1,0 +1,2067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Astartes Builder — WH40K Campaign</title>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{--bg-base:#0a0202;--panel:#150505;--panel2:#1f0808;--line:#441111;--line-highlight:#882222;--txt:#eebbdd;--dim:#995555;--gold:#d43838;--red:#ff2222;--green:#4a7c59;--metal-text:linear-gradient(180deg,#ffffff 0%,#bb8888 50%,#551111 100%);--input-bg:#050000;}
+  body[data-theme="light"]{--bg-base:#e8e0d5;--panel:#f4f0ea;--panel2:#eaddcd;--line:#c4b5a5;--line-highlight:#a8927e;--txt:#332222;--dim:#665555;--gold:#993333;--red:#cc0000;--green:#2b6b3f;--metal-text:linear-gradient(180deg,#552222 0%,#441111 100%);--input-bg:#ffffff;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",Roboto,sans-serif;background:var(--bg-base);color:var(--txt);font-size:14px;min-height:100vh;transition:background-color .3s,color .3s}
+  header{background:linear-gradient(90deg,var(--panel) 0%,var(--panel2) 50%,var(--panel) 100%);border-bottom:2px solid var(--line-highlight);padding:10px 20px;display:flex;flex-wrap:wrap;gap:20px;align-items:center;box-shadow:0 4px 15px rgba(0,0,0,.5);position:sticky;top:0;z-index:100}
+  .aquila-logo{width:100px;height:auto;filter:drop-shadow(0 0 8px rgba(0,0,0,.8)) drop-shadow(0 0 2px rgba(255,255,255,.2));transition:transform .3s ease}
+  .aquila-logo:hover{transform:scale(1.05)}
+  .aquila-logo path{fill:var(--txt);transition:fill .3s}
+  body[data-theme="light"] .aquila-logo path{fill:#332222}
+  header h1{margin:0;font-size:24px;letter-spacing:4px;color:#fff;background-clip:text;-webkit-background-clip:text;background-image:var(--metal-text);text-transform:uppercase;font-weight:800;text-shadow:0 2px 4px rgba(0,0,0,.8)}
+  .top-controls{margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .btn{background:var(--panel2);color:var(--txt);border:1px solid var(--line);padding:6px 12px;border-radius:2px;cursor:pointer;font-size:13px;transition:.2s;font-weight:600}
+  .btn:hover{border-color:var(--gold);color:var(--gold)}
+  .btn.active{border-color:var(--gold);color:var(--gold);background:var(--panel2)}
+  .btn-danger{border-color:var(--red);color:var(--red)}
+  .btn-danger:hover{background:var(--red);color:#fff}
+  main{display:grid;grid-template-columns:380px 1fr 420px;gap:15px;padding:15px;max-width:1800px;margin:0 auto;align-items:start}
+  @media (max-width:1400px){main{grid-template-columns:1fr 1fr}}
+  @media (max-width:900px){main{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-top:2px solid var(--line-highlight);border-radius:3px;padding:15px;box-shadow:0 5px 15px rgba(0,0,0,.3)}
+  .panel h2{margin:0 0 12px 0;font-size:13px;text-transform:uppercase;letter-spacing:1.5px;color:var(--gold);border-bottom:1px solid var(--line);padding-bottom:6px}
+  input[type="text"],input[type="number"],select,textarea{width:100%;background:var(--input-bg);color:var(--txt);border:1px solid var(--line);border-radius:2px;padding:8px 10px;font-family:inherit;font-size:13px;outline:none;transition:border .2s}
+  input:focus,select:focus,textarea:focus{border-color:var(--gold)}
+  label{font-size:11px;color:var(--dim);text-transform:uppercase;display:block;margin-bottom:4px;margin-top:8px}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .grid-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-top:10px;text-align:center}
+  .stat-box{background:var(--panel2);padding:6px;border:1px solid var(--line);border-radius:2px}
+  .stat-box .s-name{font-size:10px;color:var(--dim);font-weight:bold}
+  .stat-box .s-val{font-size:16px;font-weight:bold;color:var(--txt)}
+  .stat-box .s-controls{display:flex;justify-content:center;gap:5px;margin-top:5px}
+  .stat-box .s-controls button{background:var(--panel);border:1px solid var(--line);color:var(--txt);cursor:pointer;padding:2px 6px;border-radius:2px;font-size:12px}
+  .stat-box .s-controls button:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+  .stat-box .s-controls button:disabled{opacity:.3;cursor:not-allowed}
+  .item-list{max-height:500px;overflow-y:auto;padding-right:5px}
+  .item{display:flex;align-items:center;padding:6px 0;border-bottom:1px solid var(--line);gap:8px;font-size:13px}
+  .item.disabled{opacity:.5}
+  .item-name{flex:1;cursor:pointer;font-size:13px;color:var(--txt);display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+  .item-name:hover{color:#fff}
+  .item .cost{font-family:monospace;color:var(--gold);font-size:12px}
+  .qty-controls{display:flex;align-items:center;gap:5px}
+  .qty-controls button{padding:2px 6px;font-size:12px;cursor:pointer;background:var(--panel);border:1px solid var(--line);color:var(--txt);border-radius:2px}
+  .qty-controls button:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+  .qty-controls button:disabled{opacity:.3;cursor:not-allowed}
+  .qty-val{font-weight:bold;width:15px;text-align:center;color:var(--green)}
+  .inline-select{font-size:10px;padding:2px;background:var(--input-bg);color:var(--txt);border:1px solid var(--line);border-radius:2px}
+  .summary-box{background:var(--panel2);padding:10px;border:1px solid var(--line);margin-top:15px;border-radius:2px}
+  .summary-row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;color:var(--dim)}
+  .summary-row.total{border-top:1px solid var(--gold);margin-top:5px;padding-top:8px;font-size:16px;font-weight:bold;color:var(--txt)}
+  .alert{padding:10px;background:rgba(255,0,0,.1);border:1px solid var(--red);color:var(--red);margin-bottom:10px;font-size:12px;display:none}
+  .alert.show{display:block}
+  .preset-btns{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:15px}
+  .preset-btns button{flex:1;font-size:11px;padding:5px 2px}
+  .weapon-card{background:var(--panel2);border:1px solid var(--line);border-left:2px solid var(--gold);padding:10px;margin-bottom:10px;font-size:12px}
+  .weapon-card .wname{font-weight:bold;color:var(--gold);text-transform:uppercase;margin-bottom:5px;letter-spacing:1px;display:flex;justify-content:space-between}
+  .weapon-card table{width:100%;border-collapse:collapse;margin-bottom:5px}
+  .weapon-card th{font-size:9px;color:var(--dim);text-transform:uppercase;border-bottom:1px solid var(--line);padding:2px;text-align:center}
+  .weapon-card td{font-family:monospace;text-align:center;padding:3px;border-bottom:1px solid var(--line);color:var(--txt);font-size:11px}
+  .weapon-card .wspecial{font-size:11px;color:var(--dim);font-style:italic}
+  .rule-box{margin-bottom:8px;padding-left:8px;border-left:2px solid var(--dim)}
+  .rule-title{font-weight:bold;color:var(--txt);font-size:13px;margin-bottom:2px}
+  .rule-desc{font-size:12px;color:var(--dim);line-height:1.4}
+  .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);display:flex;justify-content:center;align-items:center;z-index:1000}
+  .modal-content{background:var(--panel);padding:20px;border:2px solid var(--gold);width:400px;max-width:90%;border-radius:4px}
+  .char-list{list-style:none;padding:0;margin:0 0 15px 0;max-height:200px;overflow-y:auto}
+  .char-list li{padding:10px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+
+  .company-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;padding:15px;max-width:1800px;margin:0 auto;align-items:start}
+  @media(max-width:1100px){.company-grid{grid-template-columns:1fr}}
+  .unit-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--line);font-size:13px;gap:8px}
+  .roster-badge{background:var(--panel2);border:1px solid var(--gold);padding:2px 8px;border-radius:2px;color:var(--gold);font-size:11px;white-space:nowrap}
+  .mission-card{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--gold);padding:10px;margin-bottom:10px}
+  .mission-card h4{margin:0 0 6px 0;color:var(--gold);font-size:12px;text-transform:uppercase;letter-spacing:1px}
+  .mission-card select,.mission-card textarea{margin-top:4px}
+  .boss-card{background:linear-gradient(135deg,var(--panel2),var(--panel));border:2px solid var(--red);padding:12px;margin-top:10px}
+  .boss-card h4{color:var(--red);margin:0 0 8px 0;text-transform:uppercase;letter-spacing:2px}
+  .warn-pts{color:var(--red);font-weight:bold}
+  .objective-box{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--gold);padding:10px;margin:8px 0;font-size:12px}
+  .objective-box .tag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:2px;text-transform:uppercase;letter-spacing:1px;margin-right:6px}
+  .tag-primary{background:var(--gold);color:#000}
+  .tag-secondary{background:var(--red);color:#fff}
+  .tag-alert{background:var(--green);color:#fff}
+  .injury-badge{display:inline-block;font-size:10px;padding:1px 6px;border-radius:2px;background:rgba(255,34,34,.15);border:1px solid var(--red);color:var(--red);margin:2px 2px 0 0}
+  .corner-pick{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:4px}
+  .corner-pick button{font-size:11px;padding:4px 2px}
+  .corner-pick button.sel{border-color:var(--gold);color:var(--gold);background:var(--panel2)}
+  .reward-row{display:flex;justify-content:space-between;font-size:12px;padding:2px 0;color:var(--dim)}
+  .reward-row b{color:var(--green)}
+  h4.section-h{color:var(--gold);margin-top:10px;font-size:11px;text-transform:uppercase;letter-spacing:1px}
+  .hint-box{font-size:11px;color:var(--dim);background:var(--panel2);border:1px dashed var(--line);padding:6px 8px;border-radius:2px;margin-bottom:8px}
+  .stat-line{font-family:monospace;font-size:11px;color:var(--dim);margin-top:2px}
+  .enemy-card{background:var(--panel2);border:1px solid var(--line);padding:8px;margin-bottom:8px;border-radius:2px}
+</style>
+</head>
+<body data-theme="dark">
+
+<div id="app">
+  <header>
+    <svg class="aquila-logo" viewBox="0 0 1000 400" xmlns="http://www.w3.org/2000/svg">
+      <path d="M430 120 L400 70 L380 120 L340 100 L360 150 L200 40 L280 160 L140 60 L240 180 L100 100 L220 200 L80 150 L200 240 L60 210 L180 280 L40 260 L180 310 L20 300 L160 350 L10 340 L160 390 L0 380 L160 400 L160 360 L200 360 L200 300 L240 320 L240 260 L280 280 L280 200 L320 240 L340 180 L360 200 L360 120 L400 150 L430 120 Z" fill="currentColor"/>
+      <path d="M570 120 L600 70 L620 120 L660 100 L640 150 L800 40 L720 160 L860 60 L760 180 L900 100 L780 200 L920 150 L800 240 L940 210 L820 280 L960 260 L820 310 L980 300 L840 350 L990 340 L840 390 L1000 380 L840 400 L840 360 L800 360 L800 300 L760 320 L760 260 L720 280 L720 200 L680 240 L660 180 L640 200 L640 120 L600 150 L570 120 Z" fill="currentColor"/>
+      <path d="M490 100 L520 60 L550 100 L530 140 L570 140 L520 200 L550 250 L520 320 L500 380 L480 320 L450 250 L480 200 L430 140 L470 140 L450 100 L490 100 Z" fill="currentColor"/>
+      <circle cx="490" cy="110" r="10" fill="var(--bg-base)"/>
+      <path d="M450 250 L420 280 L450 320 L480 280 Z" fill="currentColor"/>
+      <path d="M550 250 L580 280 L550 320 L520 280 Z" fill="currentColor"/>
+    </svg>
+    <h1>Astartes Builder</h1>
+    <div class="top-controls">
+      <button class="btn" :class="{active: tab==='company'}" @click="tab='company'">⚔ Company</button>
+      <button class="btn" :class="{active: tab==='builder'}" @click="tab='builder'">🛠 Builder</button>
+      <button class="btn" @click="toggleTheme">🌓 Theme</button>
+      <button v-if="tab==='builder'" class="btn" @click="saveNewCharacter">💾 Save</button>
+      <button v-if="tab==='builder'" class="btn" @click="showLibrary=true">📚 Library</button>
+      <button v-if="tab==='builder'" class="btn" @click="exportTXT">⬇ TXT</button>
+      <button v-if="tab==='builder'" class="btn" @click="exportPDF">📄 PDF</button>
+      <button v-if="tab==='builder'" class="btn btn-danger" @click="resetChar">↺ Reset</button>
+    </div>
+  </header>
+
+  <!-- ============ BUILDER ============ -->
+  <main v-if="tab==='builder'">
+    <div class="panel">
+      <h2>1. Personal Data</h2>
+      <div class="grid-2">
+        <div><label>Character Name</label><input type="text" v-model="char.name" placeholder="e.g., Leonatos"></div>
+        <div><label>Campaign</label><input type="text" v-model="char.campaign" placeholder="Campaign Name"></div>
+      </div>
+      <h2 style="margin-top:20px;">2. Chapter & Profession</h2>
+      <div class="grid-2">
+        <div>
+          <label>Chapter</label>
+          <select v-model="char.chapter">
+            <option v-for="(c, name) in chapters" :value="name">{{ name }} ({{ c.cost }} pts)</option>
+          </select>
+        </div>
+        <div>
+          <label>Profession</label>
+          <select v-model="char.cls">
+            <option v-for="(c, name) in classes" :value="name">{{ name }} ({{ c.cost }} pts)</option>
+          </select>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--dim);margin-top:5px;">{{ classes[char.cls].desc }}</div>
+      <h2 style="margin-top:20px;">3. Experience & Rank</h2>
+      <div class="grid-2">
+        <div><label>Total Experience (EXP)</label><input type="number" v-model.number="char.exp" min="0"></div>
+        <div><label>Rank</label><input type="text" :value="currentRank.rank + ' (Level ' + currentRank.lvl + ')'" readonly></div>
+      </div>
+      <h2 style="margin-top:20px;">4. Characteristics</h2>
+      <div class="grid-stats">
+        <div class="stat-box" v-for="(val, stat) in char.stats" :key="stat">
+          <div class="s-name">{{ stat }}</div>
+          <div class="s-val">{{ val }}</div>
+          <div class="s-controls">
+            <button @click="decreaseStat(stat)" :disabled="val <= baseStats[stat]">−</button>
+            <button @click="increaseStat(stat)" :disabled="val >= currentRank.maxStats[stat] || availableExp < 10">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="summary-box" style="margin-top:15px;">
+        <div class="summary-row" style="color:var(--gold);font-weight:bold;">
+          <span>Innate Rules:</span><span>{{ innateRules }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>6. Wargear (Hands Used: {{ usedHands }} / {{ maxHands }})</h2>
+      <div class="alert" :class="{show: wargearWarning}">{{ wargearWarning }}</div>
+      <div class="preset-btns">
+        <button class="btn" @click="applyPreset('assault')">Assault</button>
+        <button class="btn" @click="applyPreset('heavy')">Heavy Support</button>
+        <button class="btn" @click="applyPreset('commander')">Commander</button>
+        <button class="btn" @click="applyPreset('terminator')">Terminator</button>
+        <button class="btn" @click="applyPreset('gravis')">Gravis (Dual)</button>
+        <button class="btn" @click="applyPreset('techmarine')">Techmarine</button>
+      </div>
+      <div class="item-list">
+        <div v-for="(cat, catKey) in wargearCats" :key="catKey" style="margin-bottom:15px;">
+          <div style="font-size:11px;color:var(--gold);margin-bottom:5px;font-weight:bold;text-transform:uppercase;">{{ cat.label }}</div>
+          <div class="item" v-for="item in cat.items" :key="item.name">
+            <div class="item-name" @click="tryAdd(item)">
+              <span>{{ item.name }}</span>
+              <span style="font-size:10px;color:var(--dim);" v-if="item.hands > 0">({{ item.hands }}h)</span>
+              <select v-if="item.name === 'Combi-Grenade Launcher' && char.wargear[item.name] > 0"
+                      v-model="char.combiGrenadeType" class="inline-select" @click.stop>
+                <option value="Frag">Frag</option>
+                <option value="Krak">Krak</option>
+              </select>
+            </div>
+            <span class="cost">{{ item.cost }} pts</span>
+            <div class="qty-controls">
+              <button @click.stop="removeItem(item)" :disabled="!char.wargear[item.name]">−</button>
+              <span class="qty-val">{{ char.wargear[item.name] || 0 }}</span>
+              <button @click.stop="tryAdd(item)" :disabled="isBlocked(item)">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <h2 style="margin-top:20px;">7. Skills (Necromunda)</h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
+        <div class="item" v-for="skill in availableSkills" :key="skill.name">
+          <input type="checkbox" :id="'sk_'+skill.name" :value="skill.name" v-model="char.skills" @change="toggleSkill(skill.name)">
+          <label :for="'sk_'+skill.name">{{ skill.name }} <span style="color:var(--dim)">({{ skill.cat }})</span> — 10 EXP / 10 pts</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Character Summary</h2>
+      <div class="summary-box" style="margin-top:0;">
+        <div class="summary-row"><span>Total Cost (pts)</span><span>{{ totalCost }} pts</span></div>
+        <div class="summary-row" style="margin-top:5px;color:var(--gold);font-weight:bold;">
+          <span>Available EXP:</span>
+          <span :style="{color: availableExp < 0 ? 'var(--red)' : 'var(--green)'}">{{ availableExp }} pts</span>
+        </div>
+        <div class="summary-row" style="margin-top:5px;color:var(--dim);">
+          <span>Spent EXP (Stats+Skills):</span><span>{{ spentExp }}</span>
+        </div>
+      </div>
+      <h2 style="margin-top:20px;">Special Rules</h2>
+      <div class="rule-box" v-if="char.chapter !== 'None'">
+        <div class="rule-title">Chapter: {{ char.chapter }}</div>
+        <div class="rule-desc">{{ chapters[char.chapter].rules }}</div>
+      </div>
+      <div class="rule-box" v-if="char.cls !== 'None (Battle-Brother)'">
+        <div class="rule-title">Profession: {{ char.cls }}</div>
+        <div class="rule-desc">{{ classes[char.cls].desc }}</div>
+      </div>
+      <div class="rule-box">
+        <div class="rule-title">Astartes (Level {{ currentRank.lvl }})</div>
+        <div class="rule-desc">{{ innateRules }}</div>
+      </div>
+      <div class="rule-box" v-if="char.skills.length > 0">
+        <div class="rule-title">Skills:</div>
+        <ul style="margin:0;padding-left:15px;font-size:12px;color:var(--dim);">
+          <li v-for="sk in char.skills" :key="sk"><b style="color:var(--txt)">{{ sk }}</b>: {{ getSkillDesc(sk) }}</li>
+        </ul>
+      </div>
+      <h2 style="margin-top:20px;">Weapons & Armour</h2>
+      <div v-if="selectedProfiles.length === 0" style="color:var(--dim);font-size:12px;text-align:center;">No wargear selected</div>
+      <div v-for="prof in selectedProfiles" :key="prof.name" class="weapon-card">
+        <div class="wname">
+          <span>{{ prof.name }}</span>
+          <span v-if="prof.qty > 1" style="color:var(--green);">x{{ prof.qty }}</span>
+        </div>
+        <div v-if="prof.name === 'Combi-Grenade Launcher' && char.combiGrenadeType" style="font-weight:bold;color:var(--gold);font-size:10px;margin-bottom:5px;">
+          Loaded: {{ char.combiGrenadeType }} Grenades
+        </div>
+        <table v-if="prof.type === 'ranged'">
+          <tr><th>Range</th><th>To Hit</th><th>Str</th><th>Dmg</th><th>Sv</th><th>AP</th></tr>
+          <tr><td>{{ prof.short }}/{{ prof.long }}</td><td>{{ prof.hitS }}/{{ prof.hitL }}</td><td>{{ prof.str }}</td><td>{{ prof.dmg }}</td><td>{{ prof.saveMod }}</td><td>{{ prof.pen }}</td></tr>
+        </table>
+        <table v-if="prof.type === 'melee'">
+          <tr><th>Str</th><th>Dmg</th><th>Sv</th><th>AP</th></tr>
+          <tr><td>{{ prof.str }}</td><td>{{ prof.dmg }}</td><td>{{ prof.saveMod }}</td><td>{{ prof.pen }}</td></tr>
+        </table>
+        <div class="wspecial">{{ prof.special }}</div>
+      </div>
+      <h2 style="margin-top:20px;">Campaign Sheet</h2>
+      <label>Notes</label><textarea v-model="char.notes" rows="2"></textarea>
+      <label>Wounds & Injuries</label><textarea v-model="char.wounds" rows="2"></textarea>
+      <label>Rewards & Trophies</label><textarea v-model="char.rewards" rows="2"></textarea>
+    </div>
+  </main>
+
+  <!-- ============ COMPANY (MAIN) ============ -->
+  <div v-if="tab==='company'" class="company-grid">
+    <!-- LEFT COLUMN -->
+    <div>
+      <div class="panel">
+        <h2>⚔ Squad Roster</h2>
+
+        <div style="display:flex;gap:6px;margin-bottom:8px;">
+          <button class="btn" style="flex:1;" @click="importRosterTXT">📥 Import TXT</button>
+          <input ref="rosterFileInput" type="file" accept=".txt" style="display:none;" @change="onRosterFileSelected">
+        </div>
+
+        <label>Squad Name</label>
+        <input type="text" v-model="company.squadName" placeholder="e.g., Strike Force Leonatos">
+
+        <div class="summary-box" style="margin-top:10px;">
+          <div class="summary-row"><span>Units in Roster</span><span>{{ company.roster.length }}</span></div>
+          <div class="summary-row"><span>Ready for mission</span><span>{{ missionReadyRoster.length }}</span></div>
+          <div class="summary-row total"><span>Squad Total</span><span>{{ squadTotalPts }} pts</span></div>
+        </div>
+
+        <h4 class="section-h">LIBRARY HEROES</h4>
+        <div class="hint-box">
+          Выберите сохранённых героев из Library или импортируйте TXT от другого игрока.
+        </div>
+        <div class="item-list" style="max-height:240px;">
+          <div v-if="!library.length" style="font-size:12px;color:var(--dim);text-align:center;padding:8px;">
+            Library пуста. Создайте героя в 🛠 Builder → 💾 Save, или импортируйте TXT.
+          </div>
+          <div v-for="(c, i) in library" :key="i" class="unit-row">
+            <div>
+              <b>{{ c.name || 'Unnamed' }}</b>
+              <div style="font-size:11px;color:var(--dim);">{{ c.chapter }} | {{ c.cls }}</div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <span class="roster-badge">{{ calcCharCost(c) }} pts</span>
+              <button class="btn" @click="addToRoster(c)">+ Add</button>
+            </div>
+          </div>
+        </div>
+
+        <h4 class="section-h">ROSTER</h4>
+        <div class="item-list" style="max-height:200px;">
+          <div v-if="!company.roster.length" style="font-size:12px;color:var(--dim);text-align:center;padding:8px;">
+            Отряд пуст. Добавьте героев из Library кнопкой «+ Add» или импортируйте TXT.
+          </div>
+          <div v-for="(u, i) in company.roster" :key="'r'+i" class="unit-row">
+            <span>
+              <b>{{ u.name || 'Unnamed' }}</b>
+              <small style="color:var(--dim);"> — {{ u.chapter }} / {{ u.cls }} — {{ calcCharCost(u) }} pts</small>
+            </span>
+            <button class="btn btn-danger" @click="company.roster.splice(i,1)">✕</button>
+          </div>
+        </div>
+
+        <button v-if="!company.roster.length" class="btn" style="width:100%;margin-top:8px;" @click="tab='builder'">
+          ＋ Create New Hero (Builder)
+        </button>
+      </div>
+
+      <div class="panel" style="margin-top:15px;">
+        <h2>🎯 Enemy Faction</h2>
+        <label>Faction</label>
+        <select v-model="company.faction">
+          <option v-for="(f, k) in factions" :value="k">{{ f.label }}</option>
+        </select>
+        <label>Difficulty</label>
+        <select v-model="company.difficulty">
+          <option v-for="(d, k) in difficulties" :value="k">{{ k }} ({{ d }}% = {{ Math.floor(squadTotalPts * d / 100) }} pts)</option>
+        </select>
+        <button class="btn" style="width:100%;margin-top:12px;background:var(--gold);color:#000;"
+                @click="generateEnemy" :disabled="squadTotalPts === 0">🎲 Generate Enemy Force</button>
+
+        <div v-if="company.enemy.length" class="summary-box" style="margin-top:10px;">
+          <div class="summary-row"><span>Enemy Units</span><span>{{ company.enemy.length }}</span></div>
+          <div class="summary-row"><span>Distinct Types</span><span>{{ enemyBreakdown.length }}</span></div>
+          <div class="summary-row"><span>Target Pts</span><span>{{ enemyTargetPts }} pts</span></div>
+          <div class="summary-row total">
+            <span>Current Pts</span>
+            <span :class="{'warn-pts': enemyTotalPts > enemyTargetPts * 1.15}">{{ enemyTotalPts }} pts</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ENEMY ROSTER -->
+      <div class="panel" style="margin-top:15px;">
+        <h2>👹 Enemy Roster</h2>
+        <div v-if="!company.enemy.length" class="hint-box">
+          Ростер врагов пуст. Выберите фракцию, сложность и нажмите «🎲 Generate Enemy Force».
+        </div>
+        <div v-else>
+          <h4 class="section-h">BY TYPE</h4>
+          <div class="item-list" style="max-height:180px;">
+            <div v-for="(g, i) in enemyBreakdown" :key="'eb'+i" class="unit-row">
+              <span><b>{{ g.name }}</b> <small style="color:var(--dim);">× {{ g.qty }}</small></span>
+              <span class="roster-badge">{{ g.pts }} pts</span>
+            </div>
+          </div>
+
+          <h4 class="section-h">FULL ROSTER</h4>
+          <div v-for="(u, i) in company.enemy" :key="'er'+i" class="enemy-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <b>{{ u.name }}</b>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <span class="roster-badge">{{ u.pts }} pts</span>
+                <button class="btn btn-danger" style="font-size:11px;padding:2px 8px;"
+                        @click="company.enemy.splice(i,1)">✕</button>
+              </div>
+            </div>
+            <div v-if="u.stats" class="stat-line">
+              M{{ u.stats.M }} WS{{ u.stats.WS }} BS{{ u.stats.BS }} S{{ u.stats.S }} T{{ u.stats.T }} W{{ u.stats.W }} I{{ u.stats.I }} A{{ u.stats.A }} Ld{{ u.stats.Ld }}
+            </div>
+            <div style="font-size:11px;margin-top:2px;">
+              <span style="color:var(--gold);">Wargear:</span> {{ u.wargear || '—' }}
+            </div>
+            <div style="font-size:11px;margin-top:2px;">
+              <span style="color:var(--gold);">Rules:</span> {{ u.rules || '—' }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOSS -->
+      <div class="panel" style="margin-top:15px;">
+        <h2>👑 Boss Fight</h2>
+        <div v-if="!company.enemy.length" class="hint-box">
+          Сначала сгенерируйте врагов, чтобы определить босса фракции.
+        </div>
+        <div v-else class="boss-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <h4 style="margin:0;">{{ bossUnit.name }}</h4>
+            <span class="roster-badge" style="border-color:var(--red);color:var(--red);">{{ bossUnit.pts }} pts</span>
+          </div>
+          <div v-if="bossUnit.stats" class="stat-line" style="background:rgba(0,0,0,.2);padding:4px 6px;border-radius:2px;margin-bottom:6px;">
+            M{{ bossUnit.stats.M }} WS{{ bossUnit.stats.WS }} BS{{ bossUnit.stats.BS }} S{{ bossUnit.stats.S }} T{{ bossUnit.stats.T }} W{{ bossUnit.stats.W }} I{{ bossUnit.stats.I }} A{{ bossUnit.stats.A }} Ld{{ bossUnit.stats.Ld }}
+          </div>
+          <div style="font-size:11px;margin-bottom:4px;">
+            <span style="color:var(--gold);">Wargear:</span> {{ bossUnit.wargear }}
+          </div>
+          <div style="font-size:11px;margin-bottom:4px;">
+            <span style="color:var(--gold);">Special Rules:</span> {{ bossUnit.rules }}
+          </div>
+          <div style="font-size:11px;color:var(--dim);margin-top:6px;font-style:italic;">{{ bossUnit.desc }}</div>
+        </div>
+      </div>
+
+      <!-- INJURIES -->
+      <div class="panel" style="margin-top:15px;">
+        <h2>🩸 Injuries (Necromunda D66)</h2>
+        <div style="font-size:11px;color:var(--dim);margin-bottom:6px;">Roll D66 on Serious Injuries. Multiple Injuries re-rolls D3+1.</div>
+        <button class="btn" style="width:100%;margin-bottom:10px;background:var(--gold);color:#000;"
+                @click="runPreGameChecks" :disabled="!company.roster.length">
+          🎬 Start Mission (Pre-Game Rolls)
+        </button>
+
+        <div v-if="preGameState.report.length" class="summary-box" style="margin-bottom:10px;">
+          <div class="summary-row" style="border-bottom:1px solid var(--line);padding-bottom:4px;">
+            <b style="color:var(--gold);">Pre-Game Report</b>
+            <small style="color:var(--dim);">{{ preGameState.lastRunAt }}</small>
+          </div>
+          <div v-for="(r,i) in preGameState.report" :key="'pg'+i" class="summary-row"
+               :style="{color: r.status === 'MISSES GAME' ? 'var(--red)' : (r.status === 'Stupidity' || r.status === 'Frenzy' ? 'var(--gold)' : 'var(--dim)')}">
+            <span><b>{{ r.heroName }}</b> — {{ r.status }}</span>
+          </div>
+          <div class="summary-row" style="border-top:1px solid var(--line);margin-top:4px;padding-top:4px;">
+            <span>Ready for mission</span>
+            <b>{{ missionReadyRoster.length }} / {{ company.roster.length }}</b>
+          </div>
+          <button class="btn btn-danger" style="width:100%;margin-top:6px;font-size:11px;"
+                  @click="clearPreGame">↺ Clear Pre-Game Status</button>
+        </div>
+
+        <div v-if="!company.roster.length" style="font-size:12px;color:var(--dim);text-align:center;">No heroes in roster</div>
+        <div v-for="(u, i) in company.roster" :key="'inj'+i"
+             style="margin-bottom:10px;border-bottom:1px solid var(--line);padding-bottom:8px;"
+             :style="{opacity: (u.preGame && u.preGame.missGame) ? 0.4 : 1}">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <b>{{ u.name || 'Unnamed' }}</b>
+            <div style="display:flex;gap:4px;align-items:center;">
+              <span v-if="u.preGame && u.preGame.missGame" class="injury-badge" style="border-color:var(--red);color:var(--red);">MISSES</span>
+              <span v-else-if="u.preGame && u.preGame.headEffect" class="injury-badge" style="border-color:var(--gold);color:var(--gold);">{{ u.preGame.headEffect }}</span>
+              <button class="btn" style="font-size:11px;padding:2px 8px;" @click="rollInjury(i)">🎲 D66</button>
+            </div>
+          </div>
+          <div style="margin-top:4px;">
+            <span v-for="(inj, j) in (u.injuries || [])" :key="j" class="injury-badge">{{ inj }}</span>
+            <span v-if="!(u.injuries || []).length" style="font-size:11px;color:var(--dim);">No injuries</span>
+          </div>
+          <div v-if="u.injuryLog && u.injuryLog.length" style="font-size:10px;color:var(--dim);margin-top:4px;white-space:pre-wrap;">
+            {{ u.injuryLog.join('\n') }}
+          </div>
+        </div>
+
+        <div class="summary-box" style="margin-top:8px;">
+          <div class="summary-row" style="font-size:11px;"><span>11–15 Dead</span><span>16/21 Multiple</span><span>22–33 Stat</span></div>
+          <div class="summary-row" style="font-size:11px;"><span>34–36 Old Wound</span><span>41–55 Recovery</span><span>56 Enmity</span></div>
+          <div class="summary-row" style="font-size:11px;"><span>61–63 Captured</span><span>64–66 Scars</span><span>—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div>
+      <div class="panel">
+        <h2>📜 Missions (3)</h2>
+        <div v-for="(m, i) in company.missions" :key="'m'+i" class="mission-card">
+          <h4>Mission {{ i+1 }}</h4>
+          <label>Scenario</label>
+          <select v-model="m.scenario">
+            <option v-for="(s, k) in missionScenarios" :value="k">{{ k }} — {{ s.desc }}</option>
+          </select>
+          <label style="display:flex;align-items:center;gap:6px;margin-top:8px;text-transform:none;">
+            <input type="checkbox" v-model="m.weatherOn"> Weather
+          </label>
+          <select v-if="m.weatherOn" v-model="m.weather">
+            <option v-for="(w, k) in weatherTable" :value="k">{{ k }} — {{ w }}</option>
+          </select>
+          <label style="display:flex;align-items:center;gap:6px;margin-top:8px;text-transform:none;">
+            <input type="checkbox" v-model="m.randomEventsOn"> Random Events (D66)
+          </label>
+          <div v-if="m.randomEventsOn" style="font-size:11px;color:var(--dim);margin:2px 0 0 20px;">
+            Trigger: round 1 + each new Reinforcements wave.
+          </div>
+          <label style="display:flex;align-items:center;gap:6px;margin-top:8px;text-transform:none;">
+            <input type="checkbox" v-model="m.bossOn"> Boss Fight
+          </label>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:15px;">
+        <h2>🎯 Objectives & Rewards</h2>
+        <div class="objective-box">
+          <div>
+            <span class="tag tag-primary">Primary</span>
+            <b>{{ currentPrimary.name }}</b>
+            <span v-if="currentPrimary.roll" style="color:var(--dim);font-size:11px;">(D6: {{ currentPrimary.roll }})</span>
+          </div>
+          <div style="color:var(--dim);margin-top:4px;">{{ currentPrimary.desc }}</div>
+          <div v-if="currentPrimary.test" style="margin-top:6px;font-size:11px;">
+            <span style="color:var(--gold);">Test:</span> {{ currentPrimary.test }}
+          </div>
+          <div v-if="currentPrimary.aiGoal" style="margin-top:2px;font-size:11px;">
+            <span style="color:var(--gold);">AI Goal:</span> {{ currentPrimary.aiGoal }}
+          </div>
+          <div v-if="currentPrimary.placement" style="margin-top:2px;font-size:11px;">
+            <span style="color:var(--gold);">Placement:</span> {{ currentPrimary.placement }}
+          </div>
+          <button class="btn" style="width:100%;margin-top:8px;"
+                  @click="rollPrimaryObjective" :disabled="currentPrimary.name !== '—'">
+            🎲 Roll Primary Objective (D6)
+          </button>
+          <button v-if="currentPrimary.name !== '—' && !primaryCompleted"
+                  class="btn" style="width:100%;margin-top:6px;background:var(--green);color:#fff;"
+                  @click="completePrimary">
+            ✓ Mark Primary Complete (+Alertness, spawn Secondary)
+          </button>
+          <button class="btn btn-danger" style="width:100%;margin-top:6px;"
+                  @click="resetObjectives" v-if="currentPrimary.name !== '—'">
+            ↺ Reset Objectives
+          </button>
+        </div>
+
+        <div class="objective-box" v-if="primaryCompleted">
+          <div>
+            <span class="tag tag-secondary">Secondary</span>
+            <b>{{ currentSecondary.name }}</b>
+            <span v-if="currentSecondary.roll" style="color:var(--dim);font-size:11px;">(D6: {{ currentSecondary.roll }})</span>
+          </div>
+          <div style="color:var(--dim);margin-top:4px;">{{ currentSecondary.desc }}</div>
+          <div v-if="currentSecondary.test" style="margin-top:6px;font-size:11px;">
+            <span style="color:var(--gold);">Test:</span> {{ currentSecondary.test }}
+          </div>
+          <div v-if="currentSecondary.aiGoal" style="margin-top:2px;font-size:11px;">
+            <span style="color:var(--gold);">AI Goal:</span> {{ currentSecondary.aiGoal }}
+          </div>
+          <div class="reward-row" style="margin-top:6px;">
+            <span>Alertness</span><b>{{ alertness }} (+3 for Secondary)</b>
+          </div>
+          <button v-if="!secondaryCompleted"
+                  class="btn" style="width:100%;margin-top:8px;" @click="completeSecondary">
+            ✓ Mark Secondary Complete
+          </button>
+        </div>
+
+        <div class="objective-box" v-if="currentPrimary.name !== '—'">
+          <div style="font-size:11px;text-transform:uppercase;color:var(--gold);margin-bottom:4px;">Mission End</div>
+          <div style="color:var(--dim);">All Heroes must end a round within 6" of the same table corner.</div>
+          <label>Chosen Corner</label>
+          <div class="corner-pick">
+            <button v-for="c in ['TL','TR','BL','BR']" :key="c"
+                    class="btn" :class="{sel: chosenCorner === c}" @click="chosenCorner = c">{{ c }}</button>
+          </div>
+          <button class="btn" style="width:100%;margin-top:8px;background:var(--gold);color:#000;"
+                  @click="claimRewards" :disabled="!chosenCorner || !primaryCompleted">
+            💰 Claim Rewards
+          </button>
+        </div>
+
+        <div class="summary-box" v-if="rewardsClaimed" style="margin-top:10px;">
+          <div class="reward-row"><span>Hazard Pay</span><b>{{ hazardPay }}c</b></div>
+          <div class="reward-row"><span>Primary XP</span><b>{{ primaryXP }}</b></div>
+          <div class="reward-row" v-if="secondaryCompleted"><span>Secondary XP</span><b>{{ secondaryXP }}</b></div>
+          <div class="reward-row" style="border-top:1px solid var(--line);margin-top:4px;padding-top:4px;">
+            <span>Total XP</span><b>{{ totalCampaignXP }}</b>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:15px;">
+        <h2>🔍 Search Tokens</h2>
+        <div style="font-size:11px;color:var(--dim);margin-bottom:6px;">D3 + X (X = number of ready Heroes). Split evenly quarters/corners.</div>
+        <button class="btn" style="width:100%;" @click="rollSearchTokens" :disabled="!missionReadyRoster.length">
+          🎲 Roll Search Tokens
+        </button>
+        <div v-if="searchState.tokens.length" class="summary-box" style="margin-top:8px;">
+          <div class="summary-row"><span>Total</span><span>{{ searchState.tokens.length }} (D3={{ searchState.d3Rolled }} + {{ searchState.xHeroes }})</span></div>
+          <div class="summary-row"><span>Quarters</span><span>{{ searchState.tokens.filter(t=>t.group==='quarter').length }}</span></div>
+          <div class="summary-row"><span>Corners</span><span>{{ searchState.tokens.filter(t=>t.group==='corner').length }}</span></div>
+        </div>
+        <div class="item-list" style="max-height:220px;margin-top:8px;">
+          <div v-for="(t,i) in searchState.tokens" :key="t.id" class="unit-row">
+            <div>
+              <b>Token #{{ i+1 }}</b>
+              <div style="font-size:11px;color:var(--dim);">
+                {{ t.group === 'quarter' ? 'Quarter' : 'Corner' }} {{ t.num ? t.num : '(player picks: roll '+t.roll+')' }}
+              </div>
+              <div v-if="t.content" style="font-size:11px;color:var(--gold);margin-top:2px;">
+                → {{ t.content.label }}: {{ t.content.detail }}
+              </div>
+            </div>
+            <button class="btn" @click="revealSearchToken(i)" :disabled="t.revealed">{{ t.revealed ? '✓' : 'Reveal' }}</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:15px;">
+        <h2>🌊 Enemy Waves & Alertness</h2>
+        <div class="summary-box">
+          <div class="summary-row"><span>Wave Target Pts</span><span>{{ waveTargetPts() }} pts</span></div>
+          <div class="summary-row"><span>Current Wave</span><span>{{ waveState.currentWave }}</span></div>
+          <div class="summary-row">
+            <span>Alertness</span>
+            <span :style="{color: waveState.alertness >= 6 ? 'var(--red)' : 'var(--green)'}">{{ waveState.alertness }} / 6</span>
+          </div>
+          <div class="summary-row"><span>Awareness</span><span>{{ waveState.awareness }}</span></div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <button class="btn" style="flex:1;" @click="deploySentries" :disabled="!company.enemy.length">Deploy Sentries</button>
+          <button class="btn" style="flex:1;" @click="tickAlertness">+ Alertness (End Round)</button>
+        </div>
+        <h4 class="section-h">SENTRIES</h4>
+        <div class="item-list" style="max-height:140px;">
+          <div v-for="(s,i) in waveState.sentries" :key="'s'+i" class="unit-row">
+            <span>{{ s.unit.name }}</span>
+            <small style="color:var(--dim);">{{ s.quarter ? 'Quarter '+s.quarter : 'Player picks' }}</small>
+          </div>
+        </div>
+        <h4 class="section-h">REINFORCEMENTS</h4>
+        <div class="item-list" style="max-height:140px;">
+          <div v-for="(r,i) in waveState.reinforcements" :key="'r'+i" class="unit-row">
+            <span>{{ r.unit.name }}</span>
+            <small style="color:var(--dim);">{{ r.corner ? 'Corner '+r.corner : 'Player picks' }}</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:15px;">
+        <h2>🎲 Random Events (D66)</h2>
+        <button class="btn" style="width:100%;background:var(--gold);color:#000;" @click="rollRandomEvent">
+          🎲 Roll Random Event (2×D6)
+        </button>
+        <div v-if="lastEvent" class="summary-box" style="margin-top:8px;">
+          <div class="summary-row"><span>Roll</span><b>[{{ lastEvent.d1 }}][{{ lastEvent.d2 }}] = {{ lastEvent.key }}</b></div>
+          <div style="margin-top:4px;color:var(--gold);font-weight:bold;font-size:13px;">{{ lastEvent.name }}</div>
+          <div style="color:var(--dim);font-size:12px;margin-top:2px;">{{ lastEvent.desc }}</div>
+        </div>
+        <h4 class="section-h">Event Log</h4>
+        <div class="item-list" style="max-height:220px;">
+          <div v-for="(e,i) in eventLog" :key="i" class="unit-row">
+            <div>
+              <b style="color:var(--gold);">[{{ e.d1 }}][{{ e.d2 }}] {{ e.name }}</b>
+              <div style="font-size:11px;color:var(--dim);">{{ e.desc }}</div>
+            </div>
+            <button class="btn btn-danger" style="font-size:11px;padding:2px 8px;" @click="eventLog.splice(i,1)">✕</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:15px;">
+        <h2>⚙ Optional Challenges</h2>
+        <label style="display:flex;align-items:center;gap:6px;text-transform:none;">
+          <input type="checkbox" v-model="challengeState.bossFight"> Boss Fight
+        </label>
+        <div v-if="challengeState.bossFight" style="font-size:11px;color:var(--dim);margin:4px 0 8px 20px;">
+          Double-point wave; no further reinforcements after. Double XP if cleared.
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;text-transform:none;">
+          <input type="checkbox" v-model="challengeState.awarenessOn"> Awareness
+        </label>
+        <div v-if="challengeState.awarenessOn" style="margin:4px 0 8px 20px;">
+          <select v-model="challengeState.awarenessRoll" @change="waveState.awareness = awarenessTable[challengeState.awarenessRoll]">
+            <option v-for="n in 6" :key="n" :value="n">{{ n }} — {{ awarenessTable[n] }}</option>
+          </select>
+          <div style="font-size:11px;color:var(--dim);margin-top:2px;">Current: {{ waveState.awareness }}</div>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;text-transform:none;">
+          <input type="checkbox" v-model="challengeState.todOn"> Time of Day
+        </label>
+        <div v-if="challengeState.todOn" style="margin:4px 0 8px 20px;">
+          <select v-model="challengeState.todRoll">
+            <option v-for="n in 6" :key="n" :value="n">{{ n }} — {{ todTable[n].name }}</option>
+          </select>
+          <div style="font-size:11px;color:var(--dim);margin-top:2px;">{{ todTable[challengeState.todRoll].desc }}</div>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;text-transform:none;">
+          <input type="checkbox" v-model="challengeState.weatherOn"> Weather (Challenge)
+        </label>
+        <div v-if="challengeState.weatherOn" style="margin:4px 0 8px 20px;">
+          <select v-model="challengeState.weatherRoll">
+            <option v-for="n in 6" :key="n" :value="n">{{ n }} — {{ weatherChallengeTable[n].name }}</option>
+          </select>
+          <div style="font-size:11px;color:var(--dim);margin-top:2px;">{{ weatherChallengeTable[challengeState.weatherRoll].desc }}</div>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;text-transform:none;">
+          <input type="checkbox" v-model="challengeState.randomEventsOn"> Random Events
+        </label>
+      </div>
+
+      <div class="panel" style="margin-top:15px;">
+        <h2>🪖 Hero Deployment</h2>
+        <div style="font-size:11px;color:var(--dim);margin-bottom:6px;">
+          Number corners 1–4. Roll D6: 1–4 → deploy within 6" of that corner. 5–6 → player picks.
+        </div>
+        <button class="btn" style="width:100%;" @click="rollHeroDeployment">🎲 Roll Hero Corner</button>
+        <div v-if="heroDeployment.roll" class="summary-box" style="margin-top:8px;">
+          <div class="summary-row"><span>Roll</span><span>{{ heroDeployment.roll }}</span></div>
+          <div class="summary-row"><span>Corner</span><span>{{ heroDeployment.corner || 'Player picks' }}</span></div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:15px;">
+        <h2>📤 Export Campaign</h2>
+        <button class="btn" style="width:100%;margin-bottom:8px;" @click="exportCampaignTXT">⬇ Export Campaign TXT</button>
+        <button class="btn" style="width:100%;" @click="exportCampaignPDF">📄 Export Campaign PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" v-if="showLibrary" @click.self="showLibrary = false">
+    <div class="modal-content">
+      <h2 style="margin-top:0;">Character Library</h2>
+      <ul class="char-list">
+        <li v-for="(c, index) in library" :key="index">
+          <div><b>{{ c.name || 'Unnamed' }}</b><br><small style="color:var(--dim)">{{ c.campaign }} | EXP: {{ c.exp }}</small></div>
+          <div>
+            <button class="btn" @click="loadCharacter(index)">Load</button>
+            <button class="btn btn-danger" @click="deleteCharacter(index)">Delete</button>
+          </div>
+        </li>
+      </ul>
+      <div style="display:flex;gap:10px;margin-top:10px;">
+        <button class="btn" style="flex:1;background:var(--gold);color:#000;" @click="saveNewCharacter">Save Current</button>
+        <button class="btn" @click="showLibrary = false">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const { createApp, ref, reactive, computed, watch, onMounted } = Vue;
+
+const app = createApp({
+  setup() {
+    const showLibrary = ref(false);
+    const library = ref([]);
+    const wargearWarning = ref("");
+
+    /* ========== CHAPTERS / CLASSES / RANKS ========== */
+    const chapters = {
+      "Dark Angels":{cost:5,rules:"Stubborn; Preferred enemy — Fallen."},
+      "White Scars":{cost:5,rules:"Move through Cover; Fleet."},
+      "Space Wolves":{cost:5,rules:"Counter-Attack; True Grit."},
+      "Imperial Fists":{cost:5,rules:"Stubborn (in cover only); Re-roll Ammo rolls for BOLT weapons (not Jams)."},
+      "Blood Angels":{cost:5,rules:"At the start of the game roll D6: on a 1, the model gains Furious Charge and Fearless."},
+      "Iron Hands":{cost:5,rules:"Bionic arm upgrade at no additional cost; does not take a Wargear slot."},
+      "Ultramarines":{cost:5,rules:"May choose the result of any Break test."},
+      "Salamanders":{cost:5,rules:"Master-crafted upgrade for one weapon at no additional cost; does not take a Wargear slot."},
+      "Raven Guard":{cost:5,rules:"Scout move/outflank; Hit'n'Run."},
+      "Deathwatch":{cost:5,rules:"Preferred enemy — XENOS; ammo upgrades do not take a Wargear slot. May combine Heavy Bolter + Heavy Flamer or Power Fist + Melta-pistol as single weapons."},
+      "Black Templars":{cost:5,rules:"Always Fearless in close combat. If they fail a morale test from shooting, they flee towards the enemy instead of away."},
+      "Crimson Fists":{cost:5,rules:"Stubborn; Preferred enemy — Orks."},
+      "Blood Ravens":{cost:5,rules:"Latent Psyker — any Astartes in this army may have Psyker level 1."},
+      "Exorcists":{cost:5,rules:"Preferred enemy — Daemons; psykers can use Inquisition powers at any psy-level."},
+      "Carcharodons":{cost:5,rules:"Scout move/outflank; Furious Charge."},
+      "Minotaurs":{cost:5,rules:"Furious Charge; re-roll Charge rolls."},
+      "Astral Claws":{cost:5,rules:"Stubborn."},
+      "None":{cost:0,rules:"No Chapter tactics."}
+    };
+
+    const classes = {
+      "None (Battle-Brother)":{cost:0,desc:"Standard Battle-Brother."},
+      "Commander":{cost:30,desc:"+1 Ld. +1 Wargear slot. Allies within 12\" may use his Ld. Iron Will."},
+      "Champion/Veteran":{cost:10,desc:"+1 A. +1 Wargear slot. Access to any Space Marine weapon and grenades. Counter Attack."},
+      "Standard Bearer":{cost:10,desc:"+1 Wargear slot. Allies within 12\" may re-roll Break tests."},
+      "Apothecary":{cost:14,desc:"+1 Wargear slot. Free Medi-pack. Medic."},
+      "Techmarine":{cost:10,desc:"+3 Wargear slots. Repair. Access to Forge Bolter, Omnissian Power Axe, Grav Pistol. Armourer."},
+      "Chaplain":{cost:30,desc:"+2 Wargear slots. Allies within 8\" may re-roll any Ld test. Nerves of Steel."},
+      "Codicier (Librarian)":{cost:30,desc:"+1 Psyker level. +1 Wargear slot. Access to Librarian and Adeptus powers. Dodge."},
+      "Operative":{cost:5,desc:"+1 M, +1 I. +1 Wargear slot. Infiltration. Access to special weapons and grenades. Ambush."},
+      "Heavy Support":{cost:10,desc:"Standard Battle-Brother with access to Heavy weapons."},
+      "Assault":{cost:10,desc:"Fast Assault Trooper. Access to Jump Packs and close-combat weapons."}
+    };
+
+    const ranks = [
+      {rank:"Candidate (Scout)",lvl:0,pts:4,exp:0,maxStats:{M:4,WS:4,BS:4,S:3,T:3,W:1,I:3,A:1,Ld:6}},
+      {rank:"Neophyte (Scout)",lvl:1,pts:7,exp:25,maxStats:{M:4,WS:4,BS:4,S:4,T:4,W:1,I:4,A:1,Ld:7}},
+      {rank:"Brother-Initiates",lvl:2,pts:10,exp:50,maxStats:{M:4,WS:4,BS:4,S:4,T:4,W:1,I:4,A:1,Ld:7}},
+      {rank:"Battle-Brother",lvl:3,pts:11,exp:75,maxStats:{M:4,WS:4,BS:4,S:4,T:4,W:1,I:4,A:1,Ld:8}},
+      {rank:"Rising Hero",lvl:4,pts:19,exp:100,maxStats:{M:5,WS:5,BS:5,S:5,T:5,W:1,I:5,A:2,Ld:9}},
+      {rank:"Profession/Codicier",lvl:5,pts:2,exp:150,maxStats:{M:6,WS:6,BS:6,S:6,T:6,W:2,I:6,A:2,Ld:10}},
+      {rank:"Chapter Hero",lvl:6,pts:34,exp:200,maxStats:{M:6,WS:6,BS:6,S:6,T:6,W:2,I:6,A:2,Ld:10}},
+      {rank:"Legendary Hero",lvl:7,pts:48,exp:300,maxStats:{M:7,WS:7,BS:7,S:7,T:7,W:3,I:7,A:3,Ld:10}}
+    ];
+
+    const baseStats = {M:4,WS:3,BS:3,S:3,T:3,W:1,I:3,A:1,Ld:6};
+
+    const weaponProfilesData = {
+      "Bolt-pistol":{type:"ranged",hands:1,short:"0-8",long:"8-16",hitS:"+2",hitL:"–",str:"4",dmg:"1",saveMod:"-1",pen:"D6+4",special:"Can be used in close combat."},
+      "Plasma pistol":{type:"ranged",hands:1,short:"0-6",long:"6-12",hitS:"+2",hitL:"-1",str:"5",dmg:"1",saveMod:"-2",pen:"D6+5",special:"Sustained Fire -1."},
+      "Melta pistol":{type:"ranged",hands:1,short:"0-6",long:"6-12",hitS:"+2",hitL:"-1",str:"8",dmg:"D6",saveMod:"-4",pen:"2D6+8",special:"—"},
+      "Hand flamer":{type:"ranged",hands:1,short:"Template",long:"—",hitS:"Auto",hitL:"—",str:"4",dmg:"1",saveMod:"-2",pen:"D6+4",special:"Sets on fire on 4+."},
+      "Laspistol":{type:"ranged",hands:1,short:"0-8",long:"8-16",hitS:"+2",hitL:"-1",str:"3",dmg:"1",saveMod:"0",pen:"D6+3",special:"—"},
+      "Volkite Pistol":{type:"ranged",hands:1,short:"0-6",long:"6-12",hitS:"+2",hitL:"-1",str:"5",dmg:"1",saveMod:"-1",pen:"D6+5",special:"Deflagrate."},
+      "Grav Pistol":{type:"ranged",hands:1,short:"0-6",long:"6-12",hitS:"+2",hitL:"-1",str:"Special",dmg:"1",saveMod:"-2",pen:"Special",special:"Target suffers wound on 4+."},
+      "Boltgun":{type:"ranged",hands:2,short:"0-12",long:"12-24",hitS:"+1",hitL:"–",str:"4",dmg:"1",saveMod:"-1",pen:"D6+4",special:"Rapid Fire."},
+      "Storm Bolter":{type:"ranged",hands:2,short:"0-12",long:"12-24",hitS:"+1",hitL:"–",str:"4",dmg:"1",saveMod:"-1",pen:"D6+4",special:"Sustained Fire -1."},
+      "Forge Bolter":{type:"ranged",hands:0,short:"0-12",long:"12-24",hitS:"+1",hitL:"–",str:"4",dmg:"1",saveMod:"-1",pen:"D6+4",special:"Rapid Fire, AP3."},
+      "Heavy Bolt Rifle":{type:"ranged",hands:2,short:"0-18",long:"18-36",hitS:"+1",hitL:"–",str:"5",dmg:"1",saveMod:"-2",pen:"D6+5",special:"Heavy 2."},
+      "Autogun":{type:"ranged",hands:2,short:"0-12",long:"12-24",hitS:"+1",hitL:"–",str:"3",dmg:"1",saveMod:"0",pen:"D6+3",special:"—"},
+      "Lasgun":{type:"ranged",hands:2,short:"0-12",long:"12-24",hitS:"+1",hitL:"–",str:"3",dmg:"1",saveMod:"-1",pen:"D6+3",special:"—"},
+      "Shotgun":{type:"ranged",hands:2,short:"0-4",long:"4-18",hitS:"–",hitL:"-1",str:"4",dmg:"1",saveMod:"0",pen:"D6+4",special:"Solid/Scatter."},
+      "Flamer":{type:"ranged",hands:2,short:"Template",long:"—",hitS:"Auto",hitL:"—",str:"4",dmg:"1",saveMod:"-2",pen:"D6+4",special:"Sets on fire on 4+."},
+      "Meltagun":{type:"ranged",hands:2,short:"0-6",long:"6-12",hitS:"+1",hitL:"–",str:"8",dmg:"D6",saveMod:"-4",pen:"2D6+8",special:"—"},
+      "Plasma Gun":{type:"ranged",hands:2,short:"0-6",long:"6-24",hitS:"+1",hitL:"–",str:"7",dmg:"1",saveMod:"-2",pen:"D6+7",special:"Sustained Fire -1."},
+      "Volkite Charger":{type:"ranged",hands:2,short:"0-12",long:"12-24",hitS:"+1",hitL:"–",str:"5",dmg:"1",saveMod:"-1",pen:"D6+5",special:"Deflagrate."},
+      "Gravgun":{type:"ranged",hands:2,short:"0-12",long:"12-24",hitS:"+1",hitL:"–",str:"Special",dmg:"1",saveMod:"-2",pen:"Special",special:"Wound on 4+."},
+      "Autocannon":{type:"ranged",hands:2,short:"0-20",long:"20-70",hitS:"–",hitL:"–",str:"8",dmg:"D10",saveMod:"-3",pen:"D6+D10+8",special:"Sustained Fire -1."},
+      "Reaper Autocannon":{type:"ranged",hands:2,short:"0-20",long:"20-40",hitS:"–",hitL:"–",str:"8",dmg:"D6",saveMod:"-3",pen:"2D6+8",special:"Sustained Fire -2."},
+      "Heavy Bolter":{type:"ranged",hands:2,short:"0-20",long:"20-40",hitS:"–",hitL:"–",str:"5",dmg:"D4",saveMod:"-2",pen:"D6+D4+5",special:"Sustained Fire -2."},
+      "Lascannon":{type:"ranged",hands:2,short:"0-20",long:"20-60",hitS:"–",hitL:"–",str:"9",dmg:"2D6",saveMod:"-6",pen:"3D6+9",special:"Move or Fire."},
+      "Missile Launcher":{type:"ranged",hands:2,short:"0-20",long:"20-72",hitS:"–",hitL:"–",str:"Krak/Frag",dmg:"D10/1",saveMod:"-6/-1",pen:"D6+D10+8 / D6+4",special:"2 types."},
+      "Multi-Melta":{type:"ranged",hands:2,short:"0-12",long:"12-24",hitS:"+1",hitL:"–",str:"8",dmg:"2D12",saveMod:"-4",pen:"D6+2D12+8",special:"2\" blast."},
+      "Heavy Plasma Gun":{type:"ranged",hands:2,short:"0-20",long:"20-40",hitS:"–",hitL:"–",str:"7",dmg:"D4",saveMod:"-2",pen:"D6+D4+7",special:"Low power."},
+      "Heavy Flamer":{type:"ranged",hands:2,short:"Template",long:"—",hitS:"Auto",hitL:"—",str:"5",dmg:"1",saveMod:"-3",pen:"D6+5",special:"Sets on fire on 4+."},
+      "Deathwatch Heavy Bolter + Heavy Flamer":{type:"ranged",hands:2,short:"0-20 / Template",long:"20-40 / —",hitS:"– / Auto",hitL:"– / —",str:"5 / 5",dmg:"D4 / 1",saveMod:"-2 / -3",pen:"D6+D4+5 / D6+5",special:"Fire either profile."},
+      "Combi-Melta":{type:"ranged",hands:2,short:"0-12 / 0-6",long:"12-24 / 6-12",hitS:"+1 / +1",hitL:"– / –",str:"4 / 8",dmg:"1 / D6",saveMod:"-1 / -4",pen:"D6+4 / 2D6+8",special:"Fire either profile."},
+      "Combi-Flamer":{type:"ranged",hands:2,short:"0-12 / Template",long:"12-24 / —",hitS:"+1 / Auto",hitL:"– / —",str:"4 / 4",dmg:"1 / 1",saveMod:"-1 / -2",pen:"D6+4 / D6+4",special:"Fire either profile."},
+      "Combi-Plasma":{type:"ranged",hands:2,short:"0-12 / 0-6",long:"12-24 / 6-24",hitS:"+1 / +1",hitL:"– / –",str:"4 / 7",dmg:"1 / 1",saveMod:"-1 / -2",pen:"D6+4 / D6+7",special:"Plasma must recharge."},
+      "Combi-Grenade Launcher":{type:"ranged",hands:2,short:"0-12 / 0-20",long:"12-24 / 20-60",hitS:"+1 / –",hitL:"– / -1",str:"4 / Varies",dmg:"1 / Varies",saveMod:"-1 / Varies",pen:"D6+4 / Varies",special:"Choose grenade type."},
+      "Deathwatch Power Fist + Melta-pistol":{type:"melee",hands:1,str:"8 / 8",dmg:"1 / D6",saveMod:"-5 / -4",pen:"D6+D20+8 / 2D6+8",special:"May use either profile in HtH."},
+      "Gravis Power Fist + Bolt-pistol":{type:"melee",hands:1,str:"8 / 4",dmg:"1 / 1",saveMod:"-5 / -1",pen:"D6+D20+8 / D6+4",special:"May use either profile in HtH."},
+      "Gravis Power Fist + Hand Flamer":{type:"melee",hands:1,str:"8 / 4",dmg:"1 / 1",saveMod:"-5 / -2",pen:"D6+D20+8 / D6+4",special:"May use either profile in HtH."},
+      "Assault Launcher":{type:"ranged",hands:0,short:"0-18",long:"—",hitS:"Auto",hitL:"—",str:"4",dmg:"1",saveMod:"-1",pen:"D6+4",special:"Frag/Krak."},
+      "Astartes Combat Knife":{type:"melee",hands:1,str:"User",dmg:"1",saveMod:"-1",pen:"S+D6",special:"—"},
+      "Chainsword":{type:"melee",hands:1,str:"4",dmg:"1",saveMod:"-1",pen:"2D6+4",special:"Parry."},
+      "Power Sword":{type:"melee",hands:1,str:"5",dmg:"1",saveMod:"-3",pen:"2D6+5",special:"Parry."},
+      "Power Fist":{type:"melee",hands:1,str:"8",dmg:"1",saveMod:"-5",pen:"D6+D20+8",special:"—"},
+      "Power Axe":{type:"melee",hands:1,str:"6",dmg:"1",saveMod:"-3",pen:"D6+D12+6",special:"—"},
+      "Power Maul":{type:"melee",hands:1,str:"5",dmg:"D3",saveMod:"-2",pen:"2D6+D3+5",special:"—"},
+      "Omnissian Power Axe":{type:"melee",hands:1,str:"6",dmg:"1",saveMod:"-3",pen:"D6+D12+6",special:"Deflagrate, Parry. Techmarines only."},
+      "Crozius Arcanum":{type:"melee",hands:1,str:"5",dmg:"D3",saveMod:"-3",pen:"—",special:"Parry. Chaplains only."},
+      "Lightning Claws":{type:"melee",hands:1,str:"8",dmg:"D3",saveMod:"-5",pen:"8+D3+D20+D6",special:"Parry."},
+      "Force Sword":{type:"melee",hands:1,str:"User+1",dmg:"1",saveMod:"-3",pen:"2D6+5",special:"Force, Parry. Librarians only."},
+      "Thunder Hammer":{type:"melee",hands:2,str:"Auto",dmg:"D6",saveMod:"-5",pen:"Auto",special:"Counts as 1 hand for Terminators."},
+      "Chainfist":{type:"melee",hands:1,str:"8",dmg:"D6",saveMod:"-5",pen:"D20+8",special:"Roll 2D6 penetration, take highest."}
+    };
+
+    const calcCost = (pts2e, avail) => (pts2e === undefined ? 0 : (avail === 't' ? pts2e*1.5 : pts2e));
+
+    const wargearCats = {
+      pistols:{label:"Pistols (1 Hand)",items:[
+        {name:"Bolt-pistol",cost:calcCost(2,'a'),cat:"pistol",hands:1},
+        {name:"Plasma pistol",cost:calcCost(5,'a'),cat:"pistol",hands:1},
+        {name:"Melta pistol",cost:calcCost(8,'t'),cat:"pistol",hands:1},
+        {name:"Hand flamer",cost:calcCost(7,'a'),cat:"pistol",hands:1},
+        {name:"Laspistol",cost:calcCost(1,'a'),cat:"pistol",hands:1},
+        {name:"Volkite Pistol",cost:calcCost(6,'t'),cat:"pistol",hands:1},
+        {name:"Grav Pistol",cost:calcCost(8,'t'),cat:"pistol",hands:1}
+      ]},
+      basic:{label:"Basic (2 Hands)",items:[
+        {name:"Boltgun",cost:calcCost(3,'a'),cat:"basic",hands:2},
+        {name:"Storm Bolter",cost:calcCost(4,'a'),cat:"basic",hands:2},
+        {name:"Forge Bolter",cost:calcCost(4,'a'),cat:"basic",hands:0},
+        {name:"Heavy Bolt Rifle",cost:calcCost(6,'a'),cat:"basic",hands:2},
+        {name:"Autogun",cost:calcCost(1,'a'),cat:"basic",hands:2},
+        {name:"Lasgun",cost:calcCost(2,'a'),cat:"basic",hands:2},
+        {name:"Shotgun",cost:calcCost(2,'a'),cat:"basic",hands:2},
+        {name:"Volkite Charger",cost:calcCost(6,'t'),cat:"basic",hands:2},
+        {name:"Gravgun",cost:calcCost(7,'t'),cat:"basic",hands:2}
+      ]},
+      combi:{label:"Combi-Weapons (2 Hands)",items:[
+        {name:"Combi-Melta",cost:calcCost(10,'t'),cat:"special",hands:2},
+        {name:"Combi-Flamer",cost:calcCost(10,'t'),cat:"special",hands:2},
+        {name:"Combi-Plasma",cost:calcCost(10,'t'),cat:"special",hands:2},
+        {name:"Combi-Grenade Launcher",cost:calcCost(10,'t'),cat:"special",hands:2}
+      ]},
+      special:{label:"Special (Max 2, 2 Hands)",items:[
+        {name:"Flamer",cost:calcCost(9,'a'),cat:"special",hands:2},
+        {name:"Meltagun",cost:calcCost(8,'a'),cat:"special",hands:2},
+        {name:"Plasma Gun",cost:calcCost(8,'a'),cat:"special",hands:2}
+      ]},
+      heavy:{label:"Heavy (Max 1, 2 Hands)",items:[
+        {name:"Autocannon",cost:calcCost(25,'a'),cat:"heavy",hands:2},
+        {name:"Reaper Autocannon",cost:calcCost(25,'a'),cat:"heavy",hands:2},
+        {name:"Heavy Bolter",cost:calcCost(15,'a'),cat:"heavy",hands:2},
+        {name:"Lascannon",cost:calcCost(45,'a'),cat:"heavy",hands:2},
+        {name:"Missile Launcher",cost:calcCost(45,'a'),cat:"heavy",hands:2},
+        {name:"Multi-Melta",cost:calcCost(65,'a'),cat:"heavy",hands:2},
+        {name:"Heavy Plasma Gun",cost:calcCost(40,'a'),cat:"heavy",hands:2},
+        {name:"Heavy Flamer",cost:calcCost(20,'t'),cat:"heavy",hands:2}
+      ]},
+      dw_combi:{label:"Deathwatch Combi-Weapons",items:[
+        {name:"Deathwatch Heavy Bolter + Heavy Flamer",cost:15,cat:"heavy",hands:2},
+        {name:"Deathwatch Power Fist + Melta-pistol",cost:10,cat:"melee",hands:1}
+      ]},
+      gravis_combo:{label:"Gravis Combinations (1 Hand)",items:[
+        {name:"Gravis Power Fist + Bolt-pistol",cost:10,cat:"melee",hands:1},
+        {name:"Gravis Power Fist + Hand Flamer",cost:10,cat:"melee",hands:1},
+        {name:"Assault Launcher",cost:5,cat:"misc",hands:0}
+      ]},
+      melee1h:{label:"Close Combat (1 Hand)",items:[
+        {name:"Astartes Combat Knife",cost:calcCost(0,'a'),cat:"melee",hands:1},
+        {name:"Chainsword",cost:calcCost(2,'a'),cat:"melee",hands:1},
+        {name:"Power Sword",cost:calcCost(6,'t'),cat:"melee",hands:1},
+        {name:"Power Axe",cost:calcCost(7,'t'),cat:"melee",hands:1},
+        {name:"Power Maul",cost:calcCost(6,'t'),cat:"melee",hands:1},
+        {name:"Power Fist",cost:calcCost(10,'t'),cat:"melee",hands:1},
+        {name:"Chainfist",cost:calcCost(12,'t'),cat:"melee",hands:1},
+        {name:"Lightning Claws",cost:calcCost(10,'t'),cat:"melee",hands:1},
+        {name:"Force Sword",cost:calcCost(10,'a'),cat:"melee",hands:1},
+        {name:"Crozius Arcanum",cost:10,cat:"melee",hands:1},
+        {name:"Omnissian Power Axe",cost:calcCost(8,'a'),cat:"melee",hands:1}
+      ]},
+      melee2h:{label:"Close Combat (2 Hands)",items:[
+        {name:"Thunder Hammer",cost:calcCost(16,'t'),cat:"melee",hands:2}
+      ]},
+      gear:{label:"Armour & Misc",items:[
+        {name:"Flak Armour",cost:calcCost(1,'t'),cat:"armour",hands:0},
+        {name:"Carapace Armour",cost:calcCost(7,'a'),cat:"armour",hands:0},
+        {name:"Power Armour",cost:calcCost(12,'a'),cat:"armour",hands:0},
+        {name:"Terminator Armour",cost:calcCost(50,'a'),cat:"armour",hands:0},
+        {name:"Gravis Armour",cost:calcCost(17,'a'),cat:"armour",hands:0},
+        {name:"Combat Shield",cost:4,cat:"shield",hands:1},
+        {name:"Storm Shield",cost:10,cat:"shield",hands:1},
+        {name:"Refractor Field",cost:5,cat:"field",hands:0},
+        {name:"Bionic Eye",cost:5,cat:"misc",hands:0},
+        {name:"Bionic Arm",cost:5,cat:"misc",hands:0},
+        {name:"Medi-pack",cost:10,cat:"misc",hands:0},
+        {name:"Servo-arm",cost:10,cat:"misc",hands:0}
+      ]}
+    };
+
+    const skillList = [
+      {name:"Iron Will",cat:"Ferocity",desc:"Re-roll failed Ld tests."},
+      {name:"Nerves of Steel",cat:"Ferocity",desc:"May re-roll Pin tests."},
+      {name:"Killer Reputation",cat:"Ferocity",desc:"Causes Fear."},
+      {name:"Counter Attack",cat:"Combat",desc:"+1 A in HtH."},
+      {name:"Dodge",cat:"Agility",desc:"4+ save vs ranged/HtH."},
+      {name:"Ambush",cat:"Stealth",desc:"Can hide in any terrain."},
+      {name:"Medic",cat:"Techno",desc:"Can heal wounds."},
+      {name:"Armourer",cat:"Techno",desc:"Can repair weapons."},
+      {name:"Bulging Biceps",cat:"Muscle",desc:"+1 S."},
+      {name:"Fast Shot",cat:"Shooting",desc:"Fires twice."}
+    ];
+
+    const defaultChar = () => ({
+      name:"",campaign:"",chapter:"None",cls:"None (Battle-Brother)",
+      exp:0,stats:{M:4,WS:3,BS:3,S:3,T:3,W:1,I:3,A:1,Ld:6},
+      wargear:{},skills:[],notes:"",wounds:"",rewards:"",combiGrenadeType:"Frag"
+    });
+
+    const char = reactive(defaultChar());
+
+    const currentRank = computed(() => {
+      for (let i = ranks.length - 1; i >= 0; i--) if (char.exp >= ranks[i].exp) return ranks[i];
+      return ranks[0];
+    });
+
+    watch(currentRank, (r) => {
+      for (let k in char.stats) if (char.stats[k] > r.maxStats[k]) char.stats[k] = r.maxStats[k];
+    });
+
+    const innateRules = computed(() => {
+      if (currentRank.value.lvl >= 2) return "Break-test, Rapid fire";
+      if (currentRank.value.lvl >= 1) return "Infiltrate";
+      return "None";
+    });
+
+    const isTerminator = computed(() => (char.wargear["Terminator Armour"] || 0) > 0);
+    const isGravis = computed(() => (char.wargear["Gravis Armour"] || 0) > 0);
+
+    const meleeAttacks = computed(() => {
+      let a = 0;
+      for (let c in wargearCats) for (let it of wargearCats[c].items) {
+        const q = char.wargear[it.name] || 0;
+        if (q > 0 && it.hands === 1 && (it.cat === 'melee' || it.cat === 'pistol')) a += q;
+      }
+      if (char.wargear["Servo-arm"] > 0) a += char.wargear["Servo-arm"];
+      return a;
+    });
+
+    const usedHands = computed(() => {
+      let h = 0;
+      for (let c in wargearCats) for (let it of wargearCats[c].items) {
+        const q = char.wargear[it.name] || 0;
+        if (q > 0) {
+          let per = it.hands || 0;
+          if (it.name === 'Thunder Hammer' && isTerminator.value) per = 1;
+          if (isTerminator.value && it.cat === 'heavy') per = 1;
+          h += q * per;
+        }
+      }
+      return h;
+    });
+
+    const maxHands = computed(() => {
+      if (isTerminator.value) return 2;
+      if (isGravis.value) return 4;
+      return 2;
+    });
+
+    const isBlocked = (item) => {
+      if (item.name === "Crozius Arcanum" && char.cls !== "Chaplain") return true;
+      if ((item.name === "Force Sword" || item.name.includes("Force")) && char.cls !== "Codicier (Librarian)") return true;
+      if (item.name === "Omnissian Power Axe" && char.cls !== "Techmarine") return true;
+      if (item.name === "Forge Bolter" && char.cls !== "Techmarine") return true;
+      if (item.name === "Grav Pistol" && char.cls !== "Techmarine") return true;
+      if (item.name === "Servo-arm" && char.cls !== "Techmarine") return true;
+      if (item.name === "Assault Launcher" && !isGravis.value) return true;
+      if (item.name === "Volkite Charger" && char.cls !== "Terminator" && !isTerminator.value) return true;
+      if (item.name === "Heavy Bolt Rifle" && (char.cls !== "Heavy Support" && !isGravis.value)) return true;
+      if (item.name.startsWith("Deathwatch") && char.chapter !== "Deathwatch") return true;
+      if (item.name.startsWith("Gravis") && !isGravis.value) return true;
+      let per = item.hands || 0;
+      if (item.name === 'Thunder Hammer' && isTerminator.value) per = 1;
+      if (isTerminator.value && item.cat === 'heavy') per = 1;
+      if ((usedHands.value + per) > maxHands.value) return true;
+      let catCount = 0;
+      for (let c in wargearCats) for (let i of wargearCats[c].items) {
+        if (i.cat === item.cat) catCount += (char.wargear[i.name] || 0);
+      }
+      if (item.cat === 'heavy' && catCount >= 1) return true;
+      if (item.cat === 'special' && catCount >= 2) return true;
+      if (item.cat === 'shield' && catCount >= 1) return true;
+      return false;
+    };
+
+    const tryAdd = (item) => {
+      wargearWarning.value = "";
+      if (isBlocked(item)) {
+        if (item.name === "Crozius Arcanum") wargearWarning.value = "Crozius Arcanum is available to Chaplains only!";
+        else if (item.name.includes("Force")) wargearWarning.value = "Force Weapons are available to Librarians only!";
+        else if (["Omnissian Power Axe","Forge Bolter","Grav Pistol","Servo-arm"].includes(item.name)) wargearWarning.value = "Techmarines only!";
+        else if (item.name === "Assault Launcher") wargearWarning.value = "Requires Gravis Armour!";
+        else if (item.name === "Volkite Charger") wargearWarning.value = "Requires Terminator Armour!";
+        else if (item.name === "Heavy Bolt Rifle") wargearWarning.value = "Requires Heavy Support OR Gravis!";
+        else if (item.name.startsWith("Deathwatch")) wargearWarning.value = "Deathwatch Chapter only!";
+        else if (item.name.startsWith("Gravis")) wargearWarning.value = "Requires Gravis Armour!";
+        else wargearWarning.value = "Not enough hands or limit reached!";
+        return;
+      }
+      char.wargear[item.name] = (char.wargear[item.name] || 0) + 1;
+    };
+
+    const removeItem = (item) => {
+      const c = char.wargear[item.name] || 0;
+      if (c > 1) char.wargear[item.name] = c - 1;
+      else delete char.wargear[item.name];
+    };
+
+    const spentExp = computed(() => {
+      let cost = 0;
+      for (let k in char.stats) {
+        const d = char.stats[k] - baseStats[k];
+        if (d > 0) cost += d * 10;
+      }
+      cost += char.skills.length * 10;
+      return cost;
+    });
+
+    const availableExp = computed(() => char.exp - spentExp.value);
+
+    const increaseStat = (s) => {
+      if (availableExp.value < 10) return;
+      if (char.stats[s] >= currentRank.value.maxStats[s]) return;
+      char.stats[s]++;
+    };
+    const decreaseStat = (s) => {
+      if (char.stats[s] <= baseStats[s]) return;
+      char.stats[s]--;
+    };
+
+    const toggleSkill = (n) => {
+      const i = char.skills.indexOf(n);
+      if (i > -1) char.skills.splice(i,1);
+      else if (availableExp.value >= 10) char.skills.push(n);
+    };
+
+    const wargearCost = computed(() => {
+      let c = 0;
+      for (let k in wargearCats) for (let it of wargearCats[k].items) c += (char.wargear[it.name] || 0) * it.cost;
+      return c;
+    });
+
+    const totalCost = computed(() => {
+      return chapters[char.chapter].cost + classes[char.cls].cost + currentRank.value.pts + wargearCost.value + char.skills.length * 10;
+    });
+
+    const selectedProfiles = computed(() => {
+      const out = [];
+      for (let n in char.wargear) if (weaponProfilesData[n]) out.push({ name:n, qty:char.wargear[n], ...weaponProfilesData[n] });
+      return out;
+    });
+
+    const getSkillDesc = (n) => { const s = skillList.find(x => x.name === n); return s ? s.desc : ""; };
+
+    const applyPreset = (t) => {
+      char.wargear = {};
+      if (t === 'assault') { char.cls = "Operative"; char.wargear = {"Bolt-pistol":1,"Chainsword":1,"Power Armour":1}; }
+      else if (t === 'heavy') { char.cls = "Heavy Support"; char.wargear = {"Heavy Bolter":1,"Bolt-pistol":1,"Gravis Armour":1}; }
+      else if (t === 'commander') { char.cls = "Commander"; char.wargear = {"Bolt-pistol":1,"Power Sword":1,"Power Armour":1,"Refractor Field":1}; }
+      else if (t === 'terminator') { char.cls = "Champion/Veteran"; char.wargear = {"Terminator Armour":1,"Thunder Hammer":1,"Storm Shield":1}; }
+      else if (t === 'gravis') { char.cls = "Heavy Support"; char.wargear = {"Gravis Armour":1,"Gravis Power Fist + Bolt-pistol":2,"Assault Launcher":1}; }
+      else if (t === 'techmarine') { char.cls = "Techmarine"; char.wargear = {"Power Armour":1,"Forge Bolter":1,"Servo-arm":1,"Omnissian Power Axe":1}; }
+    };
+
+    const resetChar = () => { if (confirm("Reset current character?")) Object.assign(char, defaultChar()); };
+    const toggleTheme = () => { const b = document.body; b.setAttribute("data-theme", b.getAttribute("data-theme") === "dark" ? "light" : "dark"); };
+
+    const loadLocal = () => {
+      const s = localStorage.getItem("wh40k_library");
+      if (s) { try { library.value = JSON.parse(s); } catch (e) {} }
+      const n = localStorage.getItem('wh40k_squadName');
+      if (n) company.squadName = n;
+    };
+    const saveLocal = () => localStorage.setItem("wh40k_library", JSON.stringify(library.value));
+    const saveNewCharacter = () => { library.value.push(JSON.parse(JSON.stringify(char))); saveLocal(); alert("Character saved to library!"); };
+    const loadCharacter = (i) => { Object.assign(char, JSON.parse(JSON.stringify(library.value[i]))); showLibrary.value = false; };
+    const deleteCharacter = (i) => { if (confirm("Delete this character?")) { library.value.splice(i,1); saveLocal(); } };
+
+    const exportTXT = () => {
+      let t = `=== ASTARTES: ${char.name || 'Unnamed'} ===\n`;
+      t += `Campaign: ${char.campaign}\nChapter: ${char.chapter}\nProfession: ${char.cls}\n`;
+      t += `Rank: ${currentRank.value.rank} (Level ${currentRank.value.lvl}) | EXP: ${char.exp}\n`;
+      t += `Profile: M${char.stats.M} WS${char.stats.WS} BS${char.stats.BS} S${char.stats.S} T${char.stats.T} W${char.stats.W} I${char.stats.I} A${meleeAttacks.value} Ld${char.stats.Ld}\n`;
+      t += `\nSPECIAL RULES:\n- Innate: ${innateRules.value}\n`;
+      if (char.chapter !== 'None') t += `- Chapter (${char.chapter}): ${chapters[char.chapter].rules}\n`;
+      if (char.cls !== 'None (Battle-Brother)') t += `- Profession (${char.cls}): ${classes[char.cls].desc}\n`;
+      t += `\nWARGEAR:\n`;
+      for (let p of selectedProfiles.value) t += `- ${p.name} (${p.qty})\n`;
+      t += `\nSKILLS:\n`;
+      for (let s of char.skills) t += `- ${s}\n`;
+      const b = new Blob([t], { type:"text/plain;charset=utf-8" });
+      const a = document.createElement("a"); a.href = URL.createObjectURL(b);
+      a.download = `Astartes_${char.name || 'Hero'}.txt`; a.click();
+    };
+
+    const exportPDF = () => {
+      if (!window.jspdf) return alert("jsPDF not loaded.");
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFontSize(18); doc.text("ASTARTES CHARACTER SHEET", 20, 20);
+      doc.setFontSize(10);
+      doc.text(`Name: ${char.name} | Campaign: ${char.campaign}`, 20, 30);
+      doc.text(`Chapter: ${char.chapter} | Profession: ${char.cls}`, 20, 36);
+      doc.text(`Rank: ${currentRank.value.rank} (Lvl ${currentRank.value.lvl}) | EXP: ${char.exp}`, 20, 42);
+      let y = 55;
+      doc.setFontSize(12); doc.text("PROFILE:", 20, y); y += 6;
+      doc.setFontSize(10);
+      doc.text(`M:${char.stats.M} WS:${char.stats.WS} BS:${char.stats.BS} S:${char.stats.S} T:${char.stats.T} W:${char.stats.W} I:${char.stats.I} A:${meleeAttacks.value} Ld:${char.stats.Ld}`, 20, y); y += 10;
+      doc.setFontSize(12); doc.text("WARGEAR:", 20, y); y += 6;
+      doc.setFontSize(10);
+      for (let p of selectedProfiles.value) { doc.text(`- ${p.name} x${p.qty}`, 20, y); y += 5; }
+      doc.save(`Astartes_${char.name || 'Hero'}.pdf`);
+    };
+
+    /* ========== COMPANY ========== */
+    const tab = ref('company');  // главная вкладка = Company
+
+    const company = reactive({
+      squadName:'', roster:[], faction:'SpaceMarines', difficulty:'Normal', enemy:[],
+      missions:[
+        {scenario:'Assassins',weatherOn:false,weather:'Clear',randomEventsOn:false,bossOn:false},
+        {scenario:'Engage and Destroy',weatherOn:false,weather:'Clear',randomEventsOn:false,bossOn:false},
+        {scenario:'Take and Hold',weatherOn:false,weather:'Clear',randomEventsOn:false,bossOn:false}
+      ]
+    });
+
+    const difficulties = { Easy:75, Normal:100, Hard:125, Heroic:150, 'Last Stand':175 };
+    const difficultyLevels = { Easy:1, Normal:2, Hard:3, Heroic:4, 'Last Stand':5 };
+
+    const missionScenarios = {
+      'Assassins':{desc:'Enemy Commander wounded +1VP, slain +5VP'},
+      'Bunker Assault':{desc:'Destroy enemy bunker: +5VP'},
+      'Dawn Raid':{desc:'Squad <50% casualties or undamaged vehicle in enemy DZ: +5VP'},
+      'Engage and Destroy':{desc:'Wipe out squads/vehicles/characters: +1VP each'},
+      'Guerilla War':{desc:'Kill 3 in HtH +1VP; destroy vehicle near edge +1VP'},
+      'Hold the Line':{desc:'No unbroken enemies within 24" of your edge: +5VP'},
+      'Take and Hold':{desc:'Hold objective 24" in / 36" from left: +5VP'},
+      'Witch Hunt':{desc:'Wound enemy psyker +1VP; slay +5VP'},
+      'Terrorize':{desc:'Tyranids only — each failed test +1VP'},
+      'Trap':{desc:'Tyranids only — each trapped unit +1VP'},
+      'Tyranid Attack':{desc:'Tyranids only — Annihilate enemy = Win'}
+    };
+
+    const weatherTable = {
+      'Clear':'No effect.',
+      'Heavy Rain':'Ranged -1; terrain difficult.',
+      'Sandstorm':'LoS 12"; shooting -2.',
+      'Blizzard':'Movement halved; shooting -1; vehicle risk.',
+      'Nightfall':'LoS 18"; shooting -1.',
+      'Fog':'LoS 12"; shooting -1; scatter doubled.',
+      'Scorching Heat':'Heavy armour -1 I; ammo jams on 1-2.'
+    };
+
+    /* ========== FACTIONS (all 10, full stats/rules) ========== */
+    const factions = {
+      SpaceMarines:{label:'Space Marines (p.152)',units:[
+        {name:'Space Marine Captain',pts:96,wargear:'Power Armour, Bolt Pistol, Frag',
+         stats:{M:4,WS:7,BS:7,S:5,T:5,W:3,I:7,A:3,Ld:10}, rules:'Strategy Rating 5; allies within 12" use his Ld for Break tests.'},
+        {name:'Terminator Captain',pts:115,wargear:'Terminator Armour, StormBolter, Power Fist',
+         stats:{M:4,WS:7,BS:7,S:5,T:5,W:3,I:7,A:3,Ld:10}, rules:'Strategy Rating 5; 3+ save on 2D6; may teleport.'},
+        {name:'Chaplain',pts:84,wargear:'Power Armour, Crozius Arcanum, Rosarius',
+         stats:{M:4,WS:6,BS:6,S:5,T:5,W:2,I:6,A:2,Ld:9}, rules:'Allies within 8" re-roll failed Break tests; Rosarius 4+ unmod.'},
+        {name:'Librarian (Codicier)',pts:97,wargear:'Power Armour, Force Sword',
+         stats:{M:4,WS:5,BS:5,S:5,T:5,W:2,I:5,A:1,Ld:8}, rules:'Psyker Lv2 (Librarian/Adeptus/Inquisition).'},
+        {name:'Apothecary',pts:40,wargear:'Power Armour, MediPack',
+         stats:{M:4,WS:5,BS:5,S:4,T:4,W:1,I:5,A:1,Ld:9}, rules:'Medic; Red Grail optional.'},
+        {name:'Techmarine',pts:33,wargear:'Power Armour, Servo-arm',
+         stats:{M:4,WS:5,BS:5,S:4,T:4,W:1,I:5,A:2,Ld:9}, rules:'Repair; required for vehicles/Dreadnoughts.'},
+        {name:'Tactical Marine',pts:30,wargear:'Power Armour, Boltgun, Bolt Pistol',
+         stats:{M:4,WS:4,BS:4,S:4,T:4,W:1,I:4,A:1,Ld:8}, rules:'Rapid Fire; Break tests → Shaken.'},
+        {name:'Assault Marine',pts:30,wargear:'Power Armour, Bolt Pistol, Jump Pack',
+         stats:{M:4,WS:4,BS:4,S:4,T:4,W:1,I:4,A:1,Ld:8}, rules:'Jump Pack; Rapid Fire; Break tests → Shaken.'},
+        {name:'Devastator Marine',pts:30,wargear:'Power Armour, Heavy Bolter',
+         stats:{M:4,WS:4,BS:4,S:4,T:4,W:1,I:4,A:1,Ld:8}, rules:'Heavy weapons; Break tests → Shaken.'},
+        {name:'Scout Marine',pts:20,wargear:'Scout Armour, Bolt Pistol',
+         stats:{M:4,WS:4,BS:3,S:4,T:3,W:1,I:4,A:1,Ld:7}, rules:'Infiltrate; dispersed formation.'},
+        {name:'Terminator',pts:53,wargear:'Terminator Armour, StormBolter, Power Fist',
+         stats:{M:4,WS:5,BS:5,S:4,T:4,W:1,I:5,A:1,Ld:9}, rules:'3+ save on 2D6; may teleport; cannot hide.'},
+        {name:'Bike Marine',pts:47,wargear:'Bike, Power Armour, Bolt Pistol',
+         stats:{M:4,WS:4,BS:4,S:4,T:4,W:1,I:4,A:1,Ld:8}, rules:'Bike; coherency 6"; skid turns; hit & run.'},
+        {name:'Dreadnought',pts:115,wargear:'Twin Heavy Bolter, Power Fist',
+         stats:{M:6,WS:6,BS:6,S:7,T:7,W:3,I:5,A:3,Ld:10}, rules:'Walker; armour locations; fire frenzy on damaged crew.'}
+      ]},
+      Chaos:{label:'Chaos Space Marines (p.63)',units:[
+        {name:'Chaos Lord',pts:91,wargear:'Power Armour, Bolt Pistol, Frag',
+         stats:{M:4,WS:7,BS:7,S:5,T:5,W:3,I:7,A:3,Ld:10}, rules:'Strategy Rating 5; may take up to 3 Marks/Chaos Rewards.'},
+        {name:'Chaos Sorcerer (Lvl 2)',pts:96,wargear:'Power Armour, Force Weapon',
+         stats:{M:4,WS:5,BS:5,S:5,T:5,W:2,I:5,A:1,Ld:8}, rules:'Psyker Lv2; may take a Mark (not Khorne).'},
+        {name:'Chaos Champion',pts:58,wargear:'Power Armour, Bolt Pistol, Frag',
+         stats:{M:4,WS:6,BS:6,S:5,T:5,W:2,I:6,A:2,Ld:9}, rules:'May take 2 Chaos Rewards; may ride a bike.'},
+        {name:'Kharn the Betrayer',pts:217,wargear:'Mark of Khorne, Gorechild, Plasma Pistol',
+         stats:{M:4,WS:9,BS:7,S:6,T:5,W:6,I:7,A:3,Ld:10}, rules:'Always frenzied; may triple Move when charging; opponents cannot parry; Strategy Rating 5 if commander.'},
+        {name:'Chaos Terminator',pts:65,wargear:'Terminator Armour, Combi-Weapon',
+         stats:{M:4,WS:5,BS:5,S:4,T:4,W:1,I:5,A:1,Ld:9}, rules:'3+ save on 2D6; may teleport; may take Terminator weapons.'},
+        {name:'Khorne Berserker',pts:35,wargear:'Power Armour, Chainaxe, Bolt Pistol',
+         stats:{M:4,WS:4,BS:4,S:4,T:4,W:1,I:4,A:2,Ld:8}, rules:'Mark of Khorne; always frenzy; triple Move on charge.'},
+        {name:'Plague Marine',pts:35,wargear:'Power Armour, Plagueknife, Boltgun',
+         stats:{M:4,WS:4,BS:4,S:4,T:5,W:1,I:4,A:1,Ld:8}, rules:'Mark of Nurgle (+1 T).'},
+        {name:'Noise Marine',pts:30,wargear:'Power Armour, Sonic Blaster',
+         stats:{M:4,WS:4,BS:4,S:4,T:4,W:1,I:4,A:1,Ld:8}, rules:'Mark of Slaanesh; immune to psychology; Psychic Cacophony (nullify within 16").'},
+        {name:'Thousand Son',pts:30,wargear:'Power Armour, Boltgun, Mark of Tzeentch',
+         stats:{M:4,WS:4,BS:4,S:4,T:4,W:1,I:4,A:1,Ld:8}, rules:'Mark of Tzeentch; immune to psychology; never break; daemon-like immunities.'},
+        {name:'Chaos Dreadnought',pts:135,wargear:'Power Claw, Heavy Bolter',
+         stats:{M:6,WS:7,BS:5,S:6,T:7,W:3,I:5,A:3,Ld:10}, rules:'Walker; subject to frenzy & stupidity; fire frenzy rules.'}
+      ]},
+      Eldar:{label:'Eldar (p.82)',units:[
+        {name:'Farseer',pts:170,wargear:'Rune Armour, Laspistol, Witch Blade',
+         stats:{M:5,WS:7,BS:7,S:4,T:5,W:4,I:9,A:3,Ld:10}, rules:'Strategy Rating 4; Psyker Lv4 (Eldar powers); Rune Armour 4+ unmod.'},
+        {name:'Avatar',pts:300,wargear:'Wailing Doom, Armoured Body 2+',
+         stats:{M:6,WS:10,BS:10,S:8,T:8,W:7,I:10,A:5,Ld:10}, rules:'Causes Terror; immune to heat/biochemical/psychology; Strategy Rating 4; friendly Eldar within 12" use his Ld.'},
+        {name:'Exarch',pts:50,wargear:'Exarch Armour, Laspistol',
+         stats:{M:5,WS:6,BS:6,S:4,T:4,W:2,I:8,A:2,Ld:10}, rules:'Exarch Armour 3+; up to 2 Exarch Powers; may have Wargear Cards.'},
+        {name:'Warlock',pts:51,wargear:'Rune Armour, Laspistol',
+         stats:{M:5,WS:4,BS:4,S:3,T:4,W:1,I:7,A:1,Ld:9}, rules:'Psyker Lv1 (Eldar, except Farseer-only); Rune Armour 4+ unmod.'},
+        {name:'Dire Avenger',pts:22,wargear:'Aspect Armour, Shuriken Catapult',
+         stats:{M:5,WS:4,BS:4,S:3,T:3,W:1,I:6,A:1,Ld:9}, rules:'Aspect Armour 4+; Shuriken Catapult.'},
+        {name:'Fire Dragon',pts:28,wargear:'Aspect Armour, Meltagun',
+         stats:{M:5,WS:4,BS:4,S:3,T:3,W:1,I:4,A:1,Ld:9}, rules:'Aspect Armour 3+; Meltagun.'},
+        {name:'Howling Banshee',pts:27,wargear:'Aspect Armour, Power Sword, Banshee Mask',
+         stats:{M:6,WS:4,BS:4,S:3,T:3,W:1,I:6,A:1,Ld:9}, rules:'Banshee Mask (no Overwatch, no attack dice on charge); Aspect Armour 4+.'},
+        {name:'Striking Scorpion',pts:26,wargear:'Aspect Armour, Chainsword, Shuriken Pistol, Mandiblaster',
+         stats:{M:5,WS:4,BS:4,S:3,T:3,W:1,I:6,A:1,Ld:9}, rules:'Mandiblaster; Aspect Armour 3+; infiltrate (via Exarch powers).'},
+        {name:'Dark Reaper',pts:67,wargear:'Aspect Armour, Missile Launcher',
+         stats:{M:4,WS:4,BS:4,S:3,T:3,W:1,I:4,A:1,Ld:9}, rules:'Aspect Armour 3+; Dark Reaper Rangefinder (+1 to hit); missile types.'},
+        {name:'Warp Spider',pts:41,wargear:'Aspect Armour, Deathspinner, Warp Jump Generator',
+         stats:{M:4,WS:4,BS:4,S:3,T:3,W:1,I:4,A:1,Ld:9}, rules:'Warp Jump Generator; Aspect Armour 3+; Deathspinner template.'},
+        {name:'Guardian',pts:11,wargear:'Mesh Armour, Lasgun',
+         stats:{M:5,WS:3,BS:3,S:3,T:3,W:1,I:4,A:1,Ld:8}, rules:'Mesh Armour 5+; may upgrade to Shuriken Catapults.'},
+        {name:'Wraithguard',pts:35,wargear:'Wraithcannon, Armour Value 10',
+         stats:{M:5,WS:3,BS:3,S:3,T:5,W:2,I:4,A:1,Ld:8}, rules:'AV10 (vehicle-like); must retreat if no living Eldar; Wraithcannon ignores armour on 4+.'},
+        {name:'War Walker',pts:80,wargear:'2x Support Weapon',
+         stats:{M:8,WS:3,BS:3,S:5,T:6,W:2,I:4,A:2,Ld:8}, rules:'Walker; armour locations; 2 support weapons.'}
+      ]},
+      ImperialGuard:{label:'Imperial Guard (p.109)',units:[
+        {name:'Guard Captain',pts:75,wargear:'Carapace Armour, Laspistol, Sword',
+         stats:{M:4,WS:5,BS:5,S:4,T:4,W:2,I:5,A:2,Ld:8}, rules:'Command Squad; Strategy Rating 2; friendly within 12" use Ld for Break.'},
+        {name:'Colonel',pts:100,wargear:'Carapace Armour, Laspistol, Sword',
+         stats:{M:4,WS:6,BS:6,S:4,T:4,W:3,I:6,A:3,Ld:9}, rules:'Command Squad; Strategy Rating 2; friendly within 12" use Ld; up to 3 Wargear Cards.'},
+        {name:'Commissar',pts:40,wargear:'Laspistol, Sword',
+         stats:{M:4,WS:5,BS:5,S:4,T:4,W:2,I:5,A:2,Ld:10}, rules:'Immune to psychology; may execute a model in unit to re-roll; may lead squads.'},
+        {name:'Primaris Psyker',pts:32,wargear:'Sword, Psyker Lv1',
+         stats:{M:4,WS:3,BS:3,S:3,T:3,W:1,I:3,A:1,Ld:7}, rules:'Psyker Lv1 (Adeptus); part of Command Squad.'},
+        {name:'Guardsman',pts:10,wargear:'Flak Armour, Lasgun',
+         stats:{M:4,WS:3,BS:3,S:3,T:3,W:1,I:3,A:1,Ld:7}, rules:'Flak Armour 6+ (5+ vs blast); may form Heavy Weapons Team.'},
+        {name:'Stormtrooper',pts:13,wargear:'Flak Armour, Hotshot Lasgun',
+         stats:{M:4,WS:3,BS:3,S:3,T:3,W:1,I:3,A:1,Ld:8}, rules:'Veteran ability mandatory; may take Special/Heavy weapons; may ride Chimera.'},
+        {name:'Heavy Weapons Team',pts:60,wargear:'Lascannon / Autocannon / etc',
+         stats:{M:4,WS:3,BS:3,S:3,T:3,W:2,I:3,A:1,Ld:7}, rules:'Two-man team; if shooter dies, loader takes over; can split from squad.'},
+        {name:'Rough Rider',pts:20,wargear:'Flak Armour, Hunting Lance, Warhorse',
+         stats:{M:4,WS:3,BS:3,S:3,T:3,W:1,I:3,A:1,Ld:7}, rules:'Cavalry; +1 armour; +1 Combat Score on charge; may be veteran.'},
+        {name:'Ogryn',pts:47,wargear:'Flak Armour, Ripper Gun',
+         stats:{M:6,WS:4,BS:3,S:5,T:5,W:3,I:4,A:2,Ld:8}, rules:'Causes Fear; Ripper Gun; may upgrade to Mesh Armour.'},
+        {name:'Leman Russ',pts:205,wargear:'Battlecannon, Lascannon, 2x Heavy Bolter',
+         stats:{M:5,WS:3,BS:3,S:8,T:10,W:4,I:3,A:1,Ld:7}, rules:'Tracked; AV16/22/25; Battlecannon 2"; may not fire big gun if moved.'},
+        {name:'Chimera',pts:140,wargear:'Multilaser, StormBolter, Heavy Bolter',
+         stats:{M:6,WS:3,BS:3,S:8,T:9,W:3,I:3,A:1,Ld:7}, rules:'Tracked; AV16/21/20; transports 11 models.'},
+        {name:'Sentinel',pts:75,wargear:'Assault Cannon',
+         stats:{M:8,WS:3,BS:3,S:6,T:7,W:2,I:3,A:1,Ld:7}, rules:'Walker; AV15; may take Assault Cannon (Targeter).'}
+      ]},
+      Orks:{label:'Orks (p.128)',units:[
+        {name:'Warboss',pts:65,wargear:'Flak Armour, Bolt Pistol',
+         stats:{M:4,WS:6,BS:6,S:4,T:5,W:4,I:5,A:3,Ld:9}, rules:'Strategy Rating 3; Orks within 12" use Ld for Break.'},
+        {name:'Bigboss',pts:35,wargear:'Flak Armour, Bolt Pistol',
+         stats:{M:4,WS:5,BS:5,S:4,T:5,W:2,I:4,A:2,Ld:8}, rules:'May take up to 2 Wargear Cards; may ride Nob bike.'},
+        {name:'Weirdboy',pts:85,wargear:'Flak Armour, Psyker Lv2',
+         stats:{M:4,WS:4,BS:4,S:4,T:4,W:1,I:3,A:2,Ld:7}, rules:'Psyker Lv2 (Ork powers); accompanied by 2 Minderz.'},
+        {name:'Mekaniak',pts:18,wargear:'Flak Armour, Bolt Pistol',
+         stats:{M:4,WS:4,BS:4,S:4,T:4,W:1,I:3,A:2,Ld:7}, rules:'Repair vehicles; can take Shokk Attack Gun; may ride bike.'},
+        {name:'Painboy',pts:18,wargear:'Flak Armour, Bolt Pistol',
+         stats:{M:4,WS:4,BS:4,S:4,T:4,W:1,I:3,A:2,Ld:7}, rules:"Doc's Tools; may take up to 1 Wargear Card."},
+        {name:'Nob',pts:15,wargear:'Flak Armour, Bolt Pistol, Axe',
+         stats:{M:4,WS:4,BS:4,S:3,T:4,W:1,I:3,A:1,Ld:8}, rules:"Leads Ork mob; may take 'Eavy Armour or Mega-Armour."},
+        {name:'Ork Boy',pts:12,wargear:'Flak Armour, Bolt Pistol, Axe',
+         stats:{M:4,WS:3,BS:3,S:3,T:4,W:1,I:2,A:1,Ld:7}, rules:'Mob rule; may be upgraded by clan.'},
+        {name:'Goff Skarboy',pts:13,wargear:'Flak Armour, Bolt Pistol, Axe',
+         stats:{M:4,WS:4,BS:3,S:4,T:4,W:1,I:2,A:1,Ld:7}, rules:'Goff clan; +1 WS and +1 S vs standard Boyz.'},
+        {name:'Gretchin',pts:5,wargear:'Flak Armour, Knife',
+         stats:{M:4,WS:2,BS:3,S:3,T:3,W:1,I:2,A:1,Ld:5}, rules:'May be armed with Autopistol/Autogun/Blunderbuss; may be runts.'},
+        {name:'Stormboy',pts:11,wargear:'Flak Armour, Bolt Pistol, Jump Pack',
+         stats:{M:4,WS:3,BS:3,S:3,T:3,W:1,I:2,A:1,Ld:7}, rules:'Stormboy Jump Pack; may upgrade to Jump Packs.'},
+        {name:'Warbike',pts:45,wargear:'Twin Autocannon',
+         stats:{M:4,WS:3,BS:3,S:5,T:5,W:2,I:2,A:1,Ld:7}, rules:'Bike; skid turns; hit & run; Speed 8/12/30.'},
+        {name:'Ork Dreadnought',pts:120,wargear:'2x Power Claw, 2x Dread Weapon',
+         stats:{M:6,WS:5,BS:4,S:6,T:7,W:3,I:3,A:4,Ld:6}, rules:'Walker; AV18/18/20; may fire all weapons independently.'}
+      ]},
+      Tyranids:{label:'Tyranids (p.196)',units:[
+        {name:'Hive Tyrant',pts:164,wargear:'Claws, Psyker Lv4',
+         stats:{M:6,WS:9,BS:7,S:6,T:6,W:5,I:8,A:5,Ld:10}, rules:'Causes Terror; Strategy Rating 1; Tyranids within 18" auto-pass Ld; psyker Lv4 (Tyranid powers).'},
+        {name:'Zoanthrope',pts:120,wargear:'Warp Field, Warp Blast',
+         stats:{M:4,WS:4,BS:5,S:4,T:4,W:3,I:3,A:2,Ld:10}, rules:'Psyker Lv2; Warp Field; Warp Blast; causes Fear; immune to psychology.'},
+        {name:'Lictor',pts:96,wargear:'Claws, Flesh Hooks, Chameleon Scales',
+         stats:{M:6,WS:7,BS:4,S:6,T:5,W:3,I:8,A:4,Ld:10}, rules:'Infiltrate; Acute Senses; Chameleon Scales (-1 to hit); Dodge 5+; poison in HtH; causes Fear.'},
+        {name:'Tyranid Warrior',pts:55,wargear:'Chitinous Armour 5+, 2x Bonesword',
+         stats:{M:6,WS:6,BS:4,S:5,T:5,W:2,I:5,A:3,Ld:10}, rules:'Synapse; immune to psychology; causes Fear; may take 1 Biomorph.'},
+        {name:'Genestealer',pts:28,wargear:'Chitinous Armour 5+, Claws',
+         stats:{M:6,WS:7,BS:0,S:6,T:4,W:1,I:7,A:4,Ld:10}, rules:'Immune to psychology; causes Fear; Rending Claws (S6, -3 save).'},
+        {name:'Termagant',pts:6,wargear:'Fleshborer',
+         stats:{M:6,WS:4,BS:3,S:3,T:3,W:1,I:4,A:1,Ld:5}, rules:'Fleshborer; may upgrade to Spike Rifle/Strangleweb.'},
+        {name:'Hormagaunt',pts:8,wargear:'Claws, Leap',
+         stats:{M:6,WS:4,BS:0,S:4,T:3,W:1,I:4,A:2,Ld:5}, rules:'Leap (6" when running/charging); must charge closest enemy.'},
+        {name:'Gargoyle',pts:16,wargear:'Flamespurts, Fly',
+         stats:{M:20,WS:3,BS:3,S:3,T:3,W:1,I:3,A:1,Ld:5}, rules:'Fly (20"); may Fly High and disengage; ignores terrain.'},
+        {name:'Carnifex',pts:199,wargear:'Claws, Bio-Plasma',
+         stats:{M:6,WS:6,BS:4,S:7,T:8,W:10,I:6,A:4,Ld:10}, rules:'Causes Terror; 3+ save on 2D6; may make single S10 D3-wound attack; up to 2 Biomorphs.'},
+        {name:'Ripper Base',pts:20,wargear:'Claws',
+         stats:{M:4,WS:3,BS:0,S:4,T:3,W:5,I:1,A:5,Ld:10}, rules:'Immune to psychology; ignores terrain; no multiple-combatant bonus vs them.'},
+        {name:'Biovore',pts:20,wargear:'Spore Mines',
+         stats:{M:4,WS:3,BS:3,S:4,T:4,W:2,I:1,A:1,Ld:10}, rules:'Fires Spore Mines up to 100"; may include up to 6 Spore Mines.'}
+      ]},
+      Necrons:{label:'Necrons (p.122)',units:[
+        {name:'Necron Lord',pts:84,wargear:'Staff of Light, Armoured 2+',
+         stats:{M:4,WS:4,BS:4,S:5,T:5,W:3,I:4,A:3,Ld:10}, rules:'Armoured 2+; Repair; Isolation; auto-pass Leadership; may cause Disrupter Zone.'},
+        {name:'Necron Warrior',pts:44,wargear:'Gauss-Flayer, Armoured 2+',
+         stats:{M:4,WS:4,BS:4,S:4,T:5,W:1,I:2,A:1,Ld:10}, rules:'Armoured 2+; Repair; Isolation; auto-pass Leadership; disrupter zone.'},
+        {name:'Scarab',pts:30,wargear:'Armoured 2+, Leap 16"',
+         stats:{M:8,WS:1,BS:0,S:3,T:8,W:1,I:2,A:1,Ld:10}, rules:'Armoured 2+; leap 16"; may attach to vehicles to reduce AV by 3.'},
+        {name:'Necron Destroyer',pts:75,wargear:'Gauss Cannon, Skimmer',
+         stats:{M:4,WS:4,BS:4,S:4,T:5,W:1,I:2,A:1,Ld:10}, rules:'Skimmer; Gauss Cannon; repair/isolation; auto-pass Ld.'}
+      ]},
+      SistersOfBattle:{label:'Sisters of Battle (p.143)',units:[
+        {name:'Canoness',pts:85,wargear:'Power Armour, Boltgun, Bolt Pistol',
+         stats:{M:4,WS:6,BS:7,S:4,T:4,W:3,I:5,A:3,Ld:10}, rules:'Strategy Rating 4; Sacred Rites (+3); friendly within 12" use Ld; may take bodyguard of Seraphim.'},
+        {name:'Banner Bearer',pts:70,wargear:'Power Armour, Boltgun',
+         stats:{M:4,WS:5,BS:6,S:4,T:4,W:2,I:6,A:2,Ld:10}, rules:'Friendly units within 12" re-roll failed Break tests; must stay within 2" of Canoness.'},
+        {name:'Preacher',pts:10,wargear:'Laspistol',
+         stats:{M:4,WS:4,BS:4,S:3,T:3,W:1,I:4,A:1,Ld:9}, rules:'Sacred Rites; may join Frateris Militia or Arbites.'},
+        {name:'Missionary (Mighty Hero)',pts:80,wargear:'Rosarius, Laspistol',
+         stats:{M:4,WS:6,BS:6,S:4,T:4,W:3,I:6,A:3,Ld:10}, rules:'Strategy Rating 2; Rosarius 4+ unmod; may lead army; Sacred Rites (+1).'},
+        {name:'Confessor',pts:54,wargear:'Rosarius, Laspistol, Frenzied',
+         stats:{M:4,WS:5,BS:5,S:4,T:4,W:2,I:5,A:2,Ld:10}, rules:'Always frenzied; immune to other psychology; auto-passes Ld; Strategy Rating 2.'},
+        {name:'Battle Sister',pts:28,wargear:'Power Armour, Boltgun',
+         stats:{M:4,WS:3,BS:4,S:3,T:4,W:1,I:4,A:1,Ld:8}, rules:'Power Armour 3+; may take Special/Heavy weapon; Sacred Rites.'},
+        {name:'Seraphim',pts:35,wargear:'Power Armour, 2x Bolt Pistol, Jump Pack',
+         stats:{M:4,WS:4,BS:5,S:3,T:4,W:1,I:5,A:1,Ld:9}, rules:'Jump Pack; may fire two pistols at -1; Sacred Rites.'},
+        {name:'Frateris Militia',pts:4,wargear:'None',
+         stats:{M:4,WS:2,BS:2,S:3,T:3,W:1,I:3,A:1,Ld:6}, rules:'May take Militia weapons/standard; Frateris Standard gives +1 in first round HtH.'},
+        {name:'Sororitas Immolator',pts:140,wargear:'Twin Heavy Flamer',
+         stats:{M:8,WS:3,BS:4,S:7,T:10,W:3,I:4,A:1,Ld:9}, rules:'Tracked; AV15/20/21; causes Fear; transport; twin Heavy Flamer (360°).'}
+      ]},
+      Squats:{label:'Squats (p.187)',units:[
+        {name:'Warlord',pts:74,wargear:'Carapace Armour, Laspistol, Frag/Krak',
+         stats:{M:3,WS:7,BS:6,S:4,T:5,W:3,I:5,A:3,Ld:10}, rules:'Strategy Rating 2; must be commander; may have Hearthguard bodyguard; up to 3 Wargear Cards.'},
+        {name:'Battle Standard',pts:46,wargear:'Carapace Armour, Laspistol',
+         stats:{M:3,WS:5,BS:4,S:3,T:4,W:1,I:3,A:1,Ld:10}, rules:'Squats within 12" may re-roll a failed Ld test once.'},
+        {name:'Ancestor Lord',pts:113,wargear:'Carapace Armour, Laspistol',
+         stats:{M:3,WS:8,BS:6,S:5,T:6,W:4,I:5,A:4,Ld:10}, rules:'May be a Psyker (Squat/Adeptus); up to 3 Wargear Cards.'},
+        {name:'Squat Warrior',pts:17,wargear:'Flak Armour, Laspistol',
+         stats:{M:3,WS:4,BS:3,S:3,T:4,W:1,I:2,A:1,Ld:9}, rules:'Flak Armour 6+; Hate Orks.'},
+        {name:'Hearthguard',pts:23,wargear:'Carapace Armour, Laspistol',
+         stats:{M:3,WS:5,BS:4,S:3,T:4,W:1,I:3,A:1,Ld:10}, rules:'Carapace 4+; may lead Squat squad or be bodyguard; up to 1 Wargear Card each.'},
+        {name:'Squat Bike',pts:29,wargear:'Bike, Twin Bolter',
+         stats:{M:3,WS:4,BS:3,S:5,T:5,W:2,I:2,A:1,Ld:9}, rules:'Bike; twin Bolters; skid turns; hit & run.'},
+        {name:'Squat Exo-Armour',pts:20,wargear:'Exo-Armour 4+ on 2D6, Bolter',
+         stats:{M:3,WS:4,BS:3,S:4,T:5,W:2,I:3,A:1,Ld:9}, rules:'Exo-Armour 4+ on 2D6; integrated Bolter + Targeter; Power Axe.'}
+      ]},
+      GenestealerCult:{label:'Genestealer Cult (p.204)',units:[
+        {name:'Patriarch',pts:72,wargear:'Chitinous 5+, Claws, Psyker Lv4',
+         stats:{M:5,WS:7,BS:0,S:6,T:5,W:4,I:6,A:4,Ld:10}, rules:'Strategy Rating 1; Psyker Lv4; causes Fear; may command Cult within 12"; Tyranid immunities.'},
+        {name:'Cult Magus',pts:107,wargear:'Flak Armour, Laspistol, Psyker Lv4',
+         stats:{M:4,WS:3,BS:3,S:4,T:3,W:1,I:5,A:1,Ld:8}, rules:'Strategy Rating 1; Psyker Lv4 (1 Tyranid + rest Adeptus); may command Cult within 12".'},
+        {name:'Cult Icon Bearer',pts:45,wargear:'Flak Armour, Laspistol',
+         stats:{M:4,WS:3,BS:3,S:4,T:3,W:1,I:5,A:1,Ld:8}, rules:'Cult units within 12" re-roll failed Break tests once.'},
+        {name:'Genestealer',pts:28,wargear:'Chitinous 5+, Claws',
+         stats:{M:6,WS:7,BS:0,S:6,T:4,W:1,I:7,A:4,Ld:10}, rules:'Immune to psychology; causes Fear; Rending Claws (S6, -3 save); Tyranid immunities.'},
+        {name:'Hybrid Acolyte',pts:8,wargear:'Flak Armour, Laspistol',
+         stats:{M:4,WS:3,BS:3,S:4,T:3,W:1,I:5,A:1,Ld:8}, rules:'Flak Armour 6+; may be Psyker Lv1-2 (Adeptus); may take weapons.'},
+        {name:'Brood Brother',pts:6,wargear:'Sword, Flak Armour',
+         stats:{M:4,WS:3,BS:3,S:3,T:3,W:1,I:3,A:1,Ld:7}, rules:'Hate all enemy models; may take basic/assault/special/heavy weapons.'}
+      ]}
+    };
+
+    const missionReadyRoster = computed(() => company.roster.filter(h => !(h.preGame && h.preGame.missGame)));
+    const squadTotalPts = computed(() => missionReadyRoster.value.reduce((s,c) => s + calcCharCost(c), 0));
+    const enemyTargetPts = computed(() => Math.floor(squadTotalPts.value * (difficulties[company.difficulty]||100) / 100));
+    const enemyTotalPts = computed(() => company.enemy.reduce((s,e) => s + e.pts, 0));
+
+    const enemyBreakdown = computed(() => {
+      const map = {};
+      company.enemy.forEach(u => {
+        if (!map[u.name]) map[u.name] = { name: u.name, qty: 0, pts: 0 };
+        map[u.name].qty += 1;
+        map[u.name].pts += u.pts;
+      });
+      return Object.values(map).sort((a,b) => b.qty - a.qty || a.name.localeCompare(b.name));
+    });
+
+    function calcCharCost(c) {
+      if (!c) return 0;
+      const chap = chapters[c.chapter]?.cost || 0;
+      const cls = classes[c.cls]?.cost || 0;
+      let rankPts = 0;
+      for (let i = ranks.length - 1; i >= 0; i--) {
+        if ((c.exp || 0) >= ranks[i].exp) { rankPts = ranks[i].pts; break; }
+      }
+      let wg = 0;
+      for (let cat in wargearCats) for (let it of wargearCats[cat].items) wg += (c.wargear?.[it.name] || 0) * it.cost;
+      const skills = (c.skills?.length || 0) * 10;
+      return chap + cls + rankPts + wg + skills;
+    }
+
+    function addToRoster(c) { company.roster.push(JSON.parse(JSON.stringify(c))); }
+
+    function generateEnemy() {
+      company.enemy = [];
+      const pool = factions[company.faction].units;
+      const target = enemyTargetPts.value;
+      let guard = 0;
+      while (enemyTotalPts.value < target && guard++ < 500) {
+        const rem = target - enemyTotalPts.value;
+        const aff = pool.filter(u => u.pts <= rem + Math.floor(target * 0.1));
+        const pick = (aff.length ? aff : pool)[Math.floor(Math.random() * (aff.length || pool.length))];
+        company.enemy.push({ ...pick, uid: Date.now() + Math.random() });
+      }
+    }
+
+    const bossUnit = computed(() => {
+      const f = factions[company.faction];
+      if (!f) return { name:'—', pts:0, profile:'', desc:'', wargear:'', rules:'', stats:null };
+      const sorted = [...f.units].sort((a,b) => b.pts - a.pts);
+      const boss = sorted[0] || { name:'—', pts:0, wargear:'', rules:'', stats:null };
+      let profile = '';
+      if (boss.stats) {
+        const s = boss.stats;
+        profile = `M${s.M} WS${s.WS} BS${s.BS} S${s.S} T${s.T} W${s.W} I${s.I} A${s.A} Ld${s.Ld}`;
+      } else {
+        profile = `M:${boss.pts>100?5:4} WS:${Math.min(10,Math.floor(boss.pts/25))} BS:${Math.min(10,Math.floor(boss.pts/30))} S:${Math.min(10,Math.floor(boss.pts/25))} T:${Math.min(10,Math.floor(boss.pts/30))} W:${Math.min(5,Math.floor(boss.pts/60)+1)} I:${Math.min(10,Math.floor(boss.pts/30))} A:${Math.min(5,Math.floor(boss.pts/50)+1)} Ld:10`;
+      }
+      return {
+        name: boss.name,
+        pts: boss.pts,
+        wargear: boss.wargear || '—',
+        rules: boss.rules || '—',
+        stats: boss.stats || null,
+        profile,
+        desc: `Elite commander of ${f.label}. Counts as Character, provides Strategy Rating 5+.`
+      };
+    });
+
+    /* ===== OBJECTIVES ===== */
+    const primaryObjectives = [
+      {roll:1,name:'Clean Sweep',test:'Str',desc:'The centre of the table counts as the AI Goal. When the last model from the first wave of Reinforcements is killed, it drops an objective marker within 1". Heroes may use a Skill action whilst within 1" of the marker, and if they pass a Str test, the marker is removed and the objective is completed.',aiGoal:'Table centre',placement:'Dropped by last Reinforcements casualty (wave 1)'},
+      {roll:2,name:'Target Defense',test:'Str',desc:'Place one objective marker randomly at the centre of a table quarter or the centre of the table, which counts as the AI Goal. Heroes may use a Skill action whilst within 1" of the marker and take a Str test. If passed, at the end of each round, if any Hero is within 3" of the marker while enemies aren’t, then it’s seized and gets one token. The objective is completed once the marker has 6 tokens.',aiGoal:'Marker placement (random quarter / centre)',placement:'Random quarter centre OR table centre',tokens:6},
+      {roll:3,name:'Retrieval',test:'Dex',desc:'Place one objective marker within 6" of a random table corner, which counts as the AI Goal (if the Heroes are deployed in the same corner, move the marker to the centre of the table). Heroes within 1" of the marker may pick it up by using a Skill action and passing a Dex test, and drop it within 1" if they are Shaken. The objective is completed when the Hero carrying the marker ends its activation within 6" of the Hero deployment corner.',aiGoal:'Marker (random corner)',placement:'Within 6" of a random corner (or table centre if in Hero DZ)'},
+      {roll:4,name:'Investigation',test:'Dex',desc:'Place two objective markers randomly at the centre of two different table quarters or the centre of the table, and the marker closest to an enemy counts as its AI Goal. Heroes may use a Skill action whilst within 1" of a marker, and if they pass a Dex test, the marker is removed. The objective is completed once both markers are removed.',aiGoal:'Closest marker to an enemy',placement:'Centres of two different quarters OR table centre',markers:2},
+      {roll:5,name:'Area Search',test:'Wil',desc:'Place three objective markers randomly at the centre of three different table quarters or the centre of the table, and the marker closest to an enemy counts as its AI Goal. Heroes may use a Skill action whilst within 1" of a marker, and if they pass a Wil test, remove the marker and roll one die. On a 5+, or if it was the last marker, the objective is completed.',aiGoal:'Closest marker to an enemy',placement:'Centres of three different quarters OR table centre',markers:3,finishRoll:5},
+      {roll:6,name:'Delivery',test:'Wil',desc:'Place two delivery markers within 6" of two different random table corners (if the Heroes are deployed in the same corner as a marker, move it to the centre of the table). When the Heroes deploy, place one objective marker in their deployment zone, which counts as the AI Goal. Heroes within 1" of the marker may pick it up by using a Skill action and passing a Wil test, and drop it within 1" if they are Shaken. When the Hero carrying the objective ends its activation within 3" of a delivery marker, remove that marker. The objective is completed once both markers are removed.',aiGoal:'Objective marker in Hero DZ',placement:'2 delivery markers within 6" of two different corners + 1 objective in Hero DZ',markers:2}
+    ];
+
+    const secondaryObjectives = [
+      {roll:1,name:'Interrogate',test:'Wil',desc:'The centre of the table counts as the AI Goal. When the last model from the next wave of Reinforcements is killed, it drops an objective marker within 1". Heroes may use a Skill action whilst within 1" of the marker, and if they pass a Wil test, the marker is removed and the objective is completed.',aiGoal:'Table centre',placement:'Dropped by last Reinforcements casualty (next wave)'},
+      {roll:2,name:'Safeguard',test:'Dex',desc:'Place one objective marker at the centre of the table, which counts as the AI Goal. Heroes may use a Skill action whilst within 1" of the marker and take a Dex test. If passed, at the end of each round, if any Hero is within 3" of the marker while enemies aren’t, then it’s seized and gets one token. The objective is completed once the marker has 3 tokens.',aiGoal:'Table centre',placement:'Table centre',tokens:3},
+      {roll:3,name:'Capture',test:'Str',desc:'Place one objective marker at the centre of the table, which counts as the AI Goal. Heroes within 1" of the marker may pick it up by using a Skill action and passing a Str test, and drop it within 1" if they are Shaken. The objective is completed when the Hero carrying the marker ends its activation within 6" of any corner.',aiGoal:'Table centre',placement:'Table centre'},
+      {roll:4,name:'Sabotage',test:'Wil',desc:'Place one objective marker within 6" of the table corner furthest from one random Hero, which counts as the AI Goal. Heroes may use a Skill action whilst within 1" of the marker, and if they pass a Wil test, the marker is removed and the objective is completed.',aiGoal:'Marker (corner furthest from random Hero)',placement:'Within 6" of the corner furthest from a random Hero'},
+      {roll:5,name:'Scavenge',test:'Dex',desc:'Place two objective markers within 6" of the two corners closest to one random Hero, and the marker closest to an enemy counts as its AI Goal. Heroes may use a Skill action whilst within 1" of a marker, and if they pass a Dex test, remove the marker and roll one die. On a 4+, or if it was the last marker, the objective is completed.',aiGoal:'Closest marker to an enemy',placement:'Within 6" of the two corners closest to a random Hero',markers:2,finishRoll:4},
+      {roll:6,name:'Escort',test:'Str',desc:'Place one objective marker within 3" of one random Hero, which counts as the AI Goal, and place one extraction marker within 6" of the table corner furthest from that Hero. Heroes within 1" of the marker may pick it up by using a Skill action and passing a Str test, and drop it within 1" if they are Shaken. When the Hero carrying the objective ends its activation within 3" of the extraction marker the objective is completed.',aiGoal:'Objective near random Hero',placement:'Objective within 3" of random Hero + extraction within 6" of furthest corner'}
+    ];
+
+    const currentPrimary = ref({ name:'—', desc:'Roll to determine the primary objective.' });
+    const currentSecondary = ref({ name:'—', desc:'Appears after primary is completed.' });
+    const primaryCompleted = ref(false);
+    const secondaryCompleted = ref(false);
+    const alertness = ref(0);
+    const chosenCorner = ref(null);
+    const rewardsClaimed = ref(false);
+
+    const diffLevel = computed(() => difficultyLevels[company.difficulty] || 2);
+    const hazardPay = computed(() => 5 * diffLevel.value);
+    const primaryXP = computed(() => primaryCompleted.value ? 2 * diffLevel.value : 0);
+    const secondaryXP = computed(() => secondaryCompleted.value ? diffLevel.value : 0);
+    const totalCampaignXP = computed(() => primaryXP.value + secondaryXP.value);
+
+    function rollPrimaryObjective() {
+      const pick = primaryObjectives[Math.floor(Math.random()*6)];
+      currentPrimary.value = { ...pick, tokens:0, tokensMax: pick.tokens || 0, markersRemoved:0 };
+      primaryCompleted.value = false;
+      secondaryCompleted.value = false;
+      rewardsClaimed.value = false;
+      currentSecondary.value = { name:'—', desc:'Appears after primary is completed.' };
+      if (company.missions[0]?.randomEventsOn) rollRandomEvent();
+    }
+
+    function completePrimary() {
+      primaryCompleted.value = true;
+      alertness.value += Math.random() < 0.5 ? 1 : 2;
+      const pick = secondaryObjectives[Math.floor(Math.random()*6)];
+      currentSecondary.value = { ...pick, tokens:0, tokensMax: pick.tokens || 0, markersRemoved:0 };
+      alertness.value += 3;
+    }
+
+    function completeSecondary() { secondaryCompleted.value = true; }
+
+    function resetObjectives() {
+      currentPrimary.value = { name:'—', desc:'Roll to determine the primary objective.' };
+      currentSecondary.value = { name:'—', desc:'Appears after primary is completed.' };
+      primaryCompleted.value = false;
+      secondaryCompleted.value = false;
+      alertness.value = 0;
+      chosenCorner.value = null;
+      rewardsClaimed.value = false;
+    }
+
+    function claimRewards() {
+      if (!primaryCompleted.value) { alert('Primary objective must be completed first!'); return; }
+      rewardsClaimed.value = true;
+      company.roster.forEach(u => {
+        u.campaignXP = (u.campaignXP || 0) + totalCampaignXP.value;
+        u.hazardPay = (u.hazardPay || 0) + hazardPay.value;
+      });
+    }
+
+    /* ===== NECROMUNDA INJURIES ===== */
+    const seriousInjuries = {
+      11:{name:'DEAD',type:'dead',desc:'Killed in action. All weapons and equipment are lost.'},
+      12:{name:'DEAD',type:'dead',desc:'Killed in action.'},
+      13:{name:'DEAD',type:'dead',desc:'Killed in action.'},
+      14:{name:'DEAD',type:'dead',desc:'Killed in action.'},
+      15:{name:'DEAD',type:'dead',desc:'Killed in action.'},
+      16:{name:'MULTIPLE INJURIES',type:'multiple',desc:'Roll D3+1 more times.'},
+      21:{name:'MULTIPLE INJURIES',type:'multiple',desc:'Roll D3+1 more times.'},
+      22:{name:'CHEST WOUND',type:'perm',desc:'Toughness -1.'},
+      23:{name:'LEG WOUND',type:'perm',desc:'Movement -1.'},
+      24:{name:'ARM WOUND',type:'perm',desc:'Strength -1 when using that arm.'},
+      25:{name:'HEAD WOUND',type:'head',desc:'Start of each game roll D6: 1-3 Stupidity; 4-6 Frenzy.'},
+      26:{name:'BLINDED IN ONE EYE',type:'perm',desc:'BS -1.'},
+      31:{name:'PARTIALLY DEAFENED',type:'special',desc:'Second deafening: Ld -1.'},
+      32:{name:'SHELL SHOCK',type:'perm',desc:'I -1.'},
+      33:{name:'HAND INJURY',type:'hand',desc:'Lose D3 fingers. WS -1.'},
+      34:{name:'OLD BATTLE WOUND',type:'old',desc:'Roll D6 before each game. On 1, miss the battle.'},
+      35:{name:'OLD BATTLE WOUND',type:'old',desc:'Roll D6 before each game. On 1, miss the battle.'},
+      36:{name:'OLD BATTLE WOUND',type:'old',desc:'Roll D6 before each game. On 1, miss the battle.'},
+      41:{name:'FULL RECOVERY',type:'recover',desc:'Full recovery.'},
+      42:{name:'FULL RECOVERY',type:'recover',desc:'Full recovery.'},
+      43:{name:'FULL RECOVERY',type:'recover',desc:'Full recovery.'},
+      44:{name:'FULL RECOVERY',type:'recover',desc:'Full recovery.'},
+      45:{name:'FULL RECOVERY',type:'recover',desc:'Full recovery.'},
+      46:{name:'FULL RECOVERY',type:'recover',desc:'Full recovery.'},
+      51:{name:'FULL RECOVERY',type:'recover',desc:'Full recovery.'},
+      52:{name:'FULL RECOVERY',type:'recover',desc:'Full recovery.'},
+      53:{name:'FULL RECOVERY',type:'recover',desc:'Full recovery.'},
+      54:{name:'FULL RECOVERY',type:'recover',desc:'Full recovery.'},
+      55:{name:'FULL RECOVERY',type:'recover',desc:'Full recovery.'},
+      56:{name:'BITTER ENMITY',type:'enmity',desc:'Hates the gang responsible.'},
+      61:{name:'CAPTURED',type:'captured',desc:'Captured.'},
+      62:{name:'CAPTURED',type:'captured',desc:'Captured.'},
+      63:{name:'CAPTURED',type:'captured',desc:'Captured.'},
+      64:{name:'HORRIBLE SCARS',type:'scars',desc:'Causes Fear.'},
+      65:{name:'IMPRESSIVE SCARS',type:'scars',desc:'Causes Fear.'},
+      66:{name:'IMPRESSIVE SCARS',type:'scars',desc:'Causes Fear.'}
+    };
+
+    function rollSeriousInjury() {
+      const d1 = Math.floor(Math.random()*6)+1;
+      const d2 = Math.floor(Math.random()*6)+1;
+      const key = d1*10 + d2;
+      const inj = seriousInjuries[key] || { name:'—', type:'recover', desc:'No effect.' };
+      return { key, d1, d2, ...inj };
+    }
+
+    function applyInjuryEffect(hero, inj) {
+      if (!hero.injuries) hero.injuries = [];
+      if (inj.type === 'perm' || inj.type === 'hand') hero.injuries.push(inj.name);
+      if (inj.type === 'head') hero.injuries.push('Head Wound (Stupidity/Frenzy)');
+      if (inj.type === 'old') hero.injuries.push('Old Battle Wound (miss on D6=1)');
+      if (inj.type === 'enmity') hero.injuries.push('Bitter Enmity');
+      if (inj.type === 'captured') { hero.injuries.push('CAPTURED'); hero.captured = true; }
+      if (inj.type === 'scars') hero.injuries.push('Causes Fear (scars)');
+      if (inj.type === 'special') hero.injuries.push('Partially Deafened');
+    }
+
+    function rollInjury(idx) {
+      const hero = company.roster[idx];
+      if (!hero) return;
+      if (!hero.injuries) hero.injuries = [];
+      if (!hero.injuryLog) hero.injuryLog = [];
+      let result = rollSeriousInjury();
+      let log = [`[${result.d1}][${result.d2}] ${result.name}`];
+      if (result.type === 'multiple') {
+        const extra = Math.floor(Math.random()*3)+1 + 1;
+        for (let k=0; k<extra; k++) {
+          let rr;
+          do { rr = rollSeriousInjury(); } while (['dead','multiple','captured','recover'].includes(rr.type));
+          log.push(`  → [${rr.d1}][${rr.d2}] ${rr.name}`);
+          applyInjuryEffect(hero, rr);
+        }
+      } else {
+        applyInjuryEffect(hero, result);
+      }
+      hero.injuryLog.push(log.join('\n'));
+      if (result.type === 'dead') {
+        alert(`${hero.name || 'Hero'} is DEAD — removed from roster.`);
+        company.roster.splice(idx, 1);
+        return;
+      }
+      alert(`${hero.name || 'Hero'} — ${log.join(' / ')}`);
+    }
+
+    /* ===== PRE-GAME ===== */
+    const preGameState = reactive({ lastRunAt: null, report: [] });
+
+    function runPreGameChecks() {
+      preGameState.report = [];
+      preGameState.lastRunAt = new Date().toLocaleTimeString();
+      company.roster.forEach(hero => {
+        hero.preGame = { missGame:false, headEffect:null, oldWoundRoll:null, headRoll:null };
+        const injuries = hero.injuries || [];
+        const oldWounds = injuries.filter(i => i.startsWith('Old Battle Wound')).length;
+        if (oldWounds > 0) {
+          let miss = false;
+          for (let k=0; k<oldWounds; k++) {
+            const d6 = Math.floor(Math.random()*6)+1;
+            hero.preGame.oldWoundRoll = d6;
+            if (d6 === 1) miss = true;
+          }
+          if (miss) {
+            hero.preGame.missGame = true;
+            preGameState.report.push({ heroName: hero.name || 'Unnamed', status:'MISSES GAME' });
+          } else {
+            preGameState.report.push({ heroName: hero.name || 'Unnamed', status:'OK (Old Wound)' });
+          }
+        }
+        const headWounds = injuries.filter(i => i.startsWith('Head Wound')).length;
+        if (headWounds > 0) {
+          const d6 = Math.floor(Math.random()*6)+1;
+          hero.preGame.headRoll = d6;
+          hero.preGame.headEffect = d6 <= 3 ? 'Stupidity' : 'Frenzy';
+          preGameState.report.push({ heroName: hero.name || 'Unnamed', status: hero.preGame.headEffect });
+        }
+        if (oldWounds === 0 && headWounds === 0) {
+          preGameState.report.push({ heroName: hero.name || 'Unnamed', status:'CLEAR' });
+        }
+      });
+    }
+
+    function clearPreGame() {
+      company.roster.forEach(h => { h.preGame = null; });
+      preGameState.report = [];
+      preGameState.lastRunAt = null;
+    }
+
+    /* ===== IMPORT TXT ===== */
+    const rosterFileInput = ref(null);
+    function importRosterTXT() {
+      if (rosterFileInput.value) { rosterFileInput.value.value = ''; rosterFileInput.value.click(); }
+    }
+    function onRosterFileSelected(ev) {
+      const file = ev.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const txt = e.target.result;
+          const hero = parseCharacterTXT(txt);
+          if (!hero) { alert('Не удалось распознать TXT.'); return; }
+          library.value.push(JSON.parse(JSON.stringify(hero)));
+          saveLocal();
+          company.roster.push(JSON.parse(JSON.stringify(hero)));
+          alert(`Импортирован герой: ${hero.name || 'Unnamed'} (${calcCharCost(hero)} pts)`);
+        } catch (err) {
+          console.error(err);
+          alert('Ошибка при чтении файла: ' + err.message);
+        }
+      };
+      reader.readAsText(file, 'utf-8');
+    }
+
+    function parseCharacterTXT(txt) {
+      const hero = defaultChar();
+      const nameMatch = txt.match(/===\s*ASTARTES:\s*(.+?)\s*===/i);
+      if (nameMatch) hero.name = nameMatch[1].trim();
+      const campMatch = txt.match(/Campaign:\s*(.+)/i);
+      if (campMatch) hero.campaign = campMatch[1].trim();
+      const chapMatch = txt.match(/Chapter:\s*(.+)/i);
+      if (chapMatch) { const ch = chapMatch[1].trim(); if (chapters[ch]) hero.chapter = ch; }
+      const clsMatch = txt.match(/Profession:\s*(.+)/i);
+      if (clsMatch) { const cl = clsMatch[1].trim(); if (classes[cl]) hero.cls = cl; }
+      const expMatch = txt.match(/EXP:\s*(\d+)/i);
+      if (expMatch) hero.exp = parseInt(expMatch[1], 10) || 0;
+      const profMatch = txt.match(/Profile:\s*M(\d+)\s+WS(\d+)\s+BS(\d+)\s+S(\d+)\s+T(\d+)\s+W(\d+)\s+I(\d+)\s+A(\d+)\s+Ld(\d+)/i);
+      if (profMatch) {
+        hero.stats = { M:+profMatch[1], WS:+profMatch[2], BS:+profMatch[3], S:+profMatch[4], T:+profMatch[5],
+          W:+profMatch[6], I:+profMatch[7], A:+profMatch[8], Ld:+profMatch[9] };
+      }
+      const wargearSection = txt.split(/WARGEAR:/i)[1];
+      if (wargearSection) {
+        const wargearBlock = wargearSection.split(/SKILLS:/i)[0];
+        wargearBlock.split('\n').forEach(line => {
+          const m = line.match(/^-\s*(.+?)\s*\((\d+)\s*pcs?\.?\)/i);
+          if (m) { const qty = parseInt(m[2],10); if (qty > 0) hero.wargear[m[1].trim()] = qty; }
+        });
+      }
+      const skillsSection = txt.split(/SKILLS:/i)[1];
+      if (skillsSection) {
+        skillsSection.split('\n').forEach(line => {
+          const m = line.match(/^-\s*(.+)/);
+          if (m) { const sk = m[1].trim(); if (skillList.find(s => s.name === sk)) hero.skills.push(sk); }
+        });
+      }
+      hero.combiGrenadeType = 'Frag';
+      return hero;
+    }
+
+    /* ===== SEARCH TOKENS ===== */
+    const hazardConditions = ['Afflicted','Diseased','Impaired','Crippled','None','None'];
+    const injectorItems = ['Courage Injector','Courage Injector','Courage Injector','Frenzy Injector','Frenzy Injector','Power Injector'];
+    const grenadeItems = ['Noise Grenade','Noise Grenade','Noise Grenade','Grease Grenade','Grease Grenade','Stun Grenade'];
+    const kitItems = ['Curing Kit','Curing Kit','Curing Kit','Teleport Kit','Teleport Kit','Med Kit'];
+    const creditsAmounts = ['5c','5c','5c','10c','10c','15c'];
+    const searchState = reactive({ tokens:[], d3Rolled:0, xHeroes:0 });
+
+    function rollSearchTokens() {
+      const d3 = Math.floor(Math.random()*3)+1;
+      const x = missionReadyRoster.value.length;
+      const total = d3 + x;
+      searchState.d3Rolled = d3;
+      searchState.xHeroes = x;
+      searchState.tokens = [];
+      const half = Math.ceil(total/2);
+      const groups = [];
+      for (let i=0;i<total;i++) groups.push(i < half ? 'quarter' : 'corner');
+      for (let i=groups.length-1;i>0;i--) { const j = Math.floor(Math.random()*(i+1)); [groups[i],groups[j]] = [groups[j],groups[i]]; }
+      groups.forEach((g,i) => {
+        const roll = Math.floor(Math.random()*6)+1;
+        const num = roll <= 4 ? roll : null;
+        searchState.tokens.push({ id:i, group:g, num, roll, revealed:false, content:null });
+      });
+    }
+
+    function revealSearchToken(idx) {
+      const t = searchState.tokens[idx];
+      if (t.revealed) return;
+      t.revealed = true;
+      const roll = Math.floor(Math.random()*6)+1;
+      t.content = rollTreasure(roll);
+    }
+
+    function rollTreasure(roll) {
+      if (roll <= 2) return { type:'hazard', label:'Hazard', detail: hazardConditions[Math.floor(Math.random()*6)] };
+      if (roll === 3) return { type:'item', label:'Injector Pouch', detail: injectorItems[Math.floor(Math.random()*6)] };
+      if (roll === 4) return { type:'item', label:'Grenade Bag', detail: grenadeItems[Math.floor(Math.random()*6)] };
+      if (roll === 5) return { type:'item', label:'Kit Box', detail: kitItems[Math.floor(Math.random()*6)] };
+      if (roll === 6) return { type:'credits', label:'Credits Stash', detail: creditsAmounts[Math.floor(Math.random()*6)] };
+      return { type:'trove', label:'Treasure Trove', detail:'Any two Items/Credits of your choice' };
+    }
+
+    /* ===== WAVES ===== */
+    const waveState = reactive({ currentWave:0, alertness:0, sentries:[], reinforcements:[], awareness:'Vigilant' });
+    const awarenessTable = { 1:'Full Assault', 2:'Alarmed', 3:'Alarmed', 4:'Vigilant', 5:'Vigilant', 6:'Vigilant' };
+
+    function waveTargetPts() {
+      const pct = { Easy:25, Normal:50, Hard:100, Heroic:200, 'Last Stand':200 };
+      return Math.floor(squadTotalPts.value * (pct[company.difficulty]||50) / 100);
+    }
+
+    function deploySentries() {
+      waveState.sentries = [];
+      if (!company.enemy.length) return;
+      const mid = Math.ceil(company.enemy.length/2);
+      company.enemy.slice(0, mid).forEach(u => {
+        const roll = Math.floor(Math.random()*6)+1;
+        const q = roll <= 4 ? roll : null;
+        waveState.sentries.push({ unit:u, quarter:q, roll });
+      });
+      waveState.currentWave = 1;
+      waveState.alertness = 0;
+    }
+
+    function deployReinforcements() {
+      waveState.reinforcements = [];
+      if (!company.enemy.length) return;
+      const mid = Math.ceil(company.enemy.length/2);
+      company.enemy.slice(mid).forEach(u => {
+        const roll = Math.floor(Math.random()*6)+1;
+        const c = roll <= 4 ? roll : null;
+        waveState.reinforcements.push({ unit:u, corner:c, roll });
+      });
+    }
+
+    function tickAlertness() {
+      const bonus = waveState.sentries.length === 0 ? 2 : 1;
+      waveState.alertness += bonus;
+      if (waveState.awareness === 'Full Assault' && Math.floor(Math.random()*6)+1 <= 2) waveState.alertness += 1;
+      else if (waveState.awareness === 'Alarmed' && Math.floor(Math.random()*6)+1 === 1) waveState.alertness += 1;
+      if (waveState.alertness >= 6) {
+        waveState.alertness = 0;
+        deployReinforcements();
+        if (company.missions.some(m => m.randomEventsOn)) rollRandomEvent();
+      }
+    }
+
+    /* ===== CHALLENGES ===== */
+    const challengeState = reactive({ bossFight:false, awarenessOn:false, awarenessRoll:4, todOn:false, todRoll:4, weatherOn:false, weatherRoll:5, randomEventsOn:false });
+
+    const todTable = {
+      1:{name:'Dusk',desc:'No effect. Switch to Night after Reinforcements.'},
+      2:{name:'Night',desc:'-1 to hit shooting; LOS 12". Switch to Dawn after Reinforcements.'},
+      3:{name:'Dawn',desc:'-1 to hit shooting. Switch to Day after Reinforcements.'},
+      4:{name:'Day',desc:'No effect.'},
+      5:{name:'Day',desc:'No effect.'},
+      6:{name:'Day',desc:'No effect.'}
+    };
+
+    const weatherChallengeTable = {
+      1:{name:'Worsening',desc:'Switch to Bad after Reinforcements.'},
+      2:{name:'Bad',desc:'-1 melee; movement halved. Switch to Improving after Reinforcements.'},
+      3:{name:'Improving',desc:'-1 melee. Switch to Good after Reinforcements.'},
+      4:{name:'Good',desc:'No effect.'},
+      5:{name:'Good',desc:'No effect.'},
+      6:{name:'Good',desc:'No effect.'}
+    };
+
+    /* ===== HERO DEPLOYMENT ===== */
+    const heroDeployment = reactive({ roll:0, corner:null });
+    function rollHeroDeployment() {
+      const r = Math.floor(Math.random()*6)+1;
+      heroDeployment.roll = r;
+      heroDeployment.corner = r <= 4 ? r : null;
+    }
+
+    /* ===== RANDOM EVENTS ===== */
+    const randomEvents = {
+      11:{name:'Lightning Strike',desc:'One random Hero becomes Unconscious.'},
+      12:{name:'Stuck in the Mud',desc:'One random Hero becomes Impaired.'},
+      13:{name:'Debilitating Static',desc:'One random Hero gets -1 Str rolls until next event.'},
+      14:{name:'Falling Debris',desc:'One random Hero takes D3 wounds.'},
+      15:{name:'Razor Vines',desc:'One random Hero becomes Crippled.'},
+      16:{name:'Shifting Illusion',desc:'One random Hero gets -1 Wil rolls until next event.'},
+      21:{name:'Explosive Trap',desc:'One random Hero takes D3 hits.'},
+      22:{name:'Alien Shriek',desc:'One random Hero loses D3 Power.'},
+      23:{name:'Anomalous Gale',desc:'One random Hero becomes Afflicted.'},
+      24:{name:'Swarm Attack',desc:'One random Hero becomes Shaken.'},
+      25:{name:'Sticky Foliage',desc:'One random Hero gets -1 Dex rolls until next event.'},
+      26:{name:'Venomous Moss',desc:'One random Hero becomes Diseased.'},
+      31:{name:'Crumbling Earth',desc:'One random quarter counts as Dangerous terrain.'},
+      32:{name:'Solar Flare',desc:'All get -1 Defense until next event.'},
+      33:{name:'Dazing Spores',desc:'All get -1 to hit until next event.'},
+      34:{name:'Heavy Rain',desc:'One random quarter counts as Difficult terrain.'},
+      35:{name:'Thick Clouds',desc:'All get -6" range when shooting until next event.'},
+      36:{name:'Terrifying Quakes',desc:'All get -1 Morale until next event.'},
+      41:{name:'Psychic Pool',desc:'One random Hero +1 Morale until next event.'},
+      42:{name:'Robot Guide',desc:'One random Hero +1 Dex until next event.'},
+      43:{name:'Treasure Holopad',desc:'Place D3 Search Tokens in different quarters.'},
+      44:{name:'Spotter Drone',desc:'One random Hero +6" range when shooting.'},
+      45:{name:'Refreshment Kit',desc:'One random Hero restores D3 Power.'},
+      46:{name:'Sinkhole',desc:'One random enemy unit becomes Shaken.'},
+      51:{name:'Psychic Fog',desc:'One random Hero +1 Wil until next event.'},
+      52:{name:'Haste Stims',desc:'One random Hero +2" Advance, +4" Rush/Charge.'},
+      53:{name:'Invigorating Fumes',desc:'One random Hero +1 melee to hit.'},
+      54:{name:'Support Robot',desc:'One random Hero +1 Str until next event.'},
+      55:{name:'Enhancing Force-Field',desc:'One random Hero +1 shooting to hit.'},
+      56:{name:'Shield-Projector Drone',desc:'One random Hero +1 Defense until next event.'},
+      61:{name:'Injector Pouch',desc:'One random Hero gets a Power Injector.'},
+      62:{name:'Prophetic Vision',desc:"Reveal D3 hidden Search Tokens."},
+      63:{name:'Grenade Bag',desc:'One random Hero gets a Stun Grenade.'},
+      64:{name:'Credits Stash',desc:'One random Hero gets 15c.'},
+      65:{name:'Kit Box',desc:'One random Hero gets a Med Kit.'},
+      66:{name:'Godly Blessing',desc:'One random Hero gets D3 XP.'}
+    };
+
+    const eventLog = reactive([]);
+    const lastEvent = ref(null);
+
+    function rollRandomEvent() {
+      const d1 = Math.floor(Math.random()*6)+1;
+      const d2 = Math.floor(Math.random()*6)+1;
+      const key = d1*10 + d2;
+      const ev = randomEvents[key] || { name:'—', desc:'No event.' };
+      const entry = { key, d1, d2, ...ev, ts: Date.now() };
+      lastEvent.value = entry;
+      eventLog.value.unshift(entry);
+      applyEventEffects(key);
+      return entry;
+    }
+
+    function applyEventEffects(key) {
+      const heroes = missionReadyRoster.value;
+      if (!heroes.length) return;
+      const randomHero = () => heroes[Math.floor(Math.random()*heroes.length)];
+      if (key === 43) {
+        const d3 = Math.floor(Math.random()*3)+1;
+        for (let i=0;i<d3;i++) searchState.tokens.push({ id: Date.now()+Math.random(), group:'quarter', num:null, roll:0, revealed:false, content:null, source:'event-43' });
+        alert('Treasure Holopad: добавлено D3 ('+d3+') Search Tokens.');
+      }
+      if (key === 62) {
+        const hidden = searchState.tokens.map((t,i)=>({t,i})).filter(x=>!x.t.revealed);
+        const d3 = Math.floor(Math.random()*3)+1;
+        for (let k=0;k<d3 && hidden.length;k++) { const pick = hidden.splice(Math.floor(Math.random()*hidden.length),1)[0]; revealSearchToken(pick.i); }
+      }
+      if (key === 22 || key === 45) {
+        const h = randomHero();
+        alert(`${h.name || 'Hero'}: ${key===22?'потерял D3 Power':'восстановил D3 Power'}`);
+      }
+    }
+
+    /* ===== EXPORT CAMPAIGN ===== */
+    function exportCampaignTXT() {
+      let txt = `=== CAMPAIGN: ${company.squadName || 'Unnamed Squad'} ===\n`;
+      txt += `Total Squad Points: ${squadTotalPts.value} pts (ready: ${missionReadyRoster.value.length}/${company.roster.length})\n\n`;
+      txt += `--- ASTARTES ROSTER ---\n`;
+      company.roster.forEach((c,i) => {
+        txt += `${i+1}. ${c.name || 'Unnamed'} — ${c.chapter} — ${c.cls} — ${calcCharCost(c)} pts\n`;
+        if (c.injuries?.length) txt += `   Injuries: ${c.injuries.join(', ')}\n`;
+      });
+      txt += `\n--- PRE-GAME REPORT ---\n`;
+      if (preGameState.report.length) {
+        preGameState.report.forEach(r => txt += `${r.heroName} — ${r.status}\n`);
+        txt += `Ready for mission: ${missionReadyRoster.value.length} / ${company.roster.length}\n`;
+      } else txt += `Not rolled yet.\n`;
+      txt += `\n--- ENEMY FORCE (${company.faction} / ${company.difficulty}) ---\n`;
+      txt += `Target: ${enemyTargetPts.value} pts — Generated: ${enemyTotalPts.value} pts — Units: ${company.enemy.length}\n`;
+      company.enemy.forEach((e,i) => {
+        txt += `${i+1}. ${e.name} — ${e.pts} pts\n`;
+        if (e.stats) txt += `   Stats: M${e.stats.M} WS${e.stats.WS} BS${e.stats.BS} S${e.stats.S} T${e.stats.T} W${e.stats.W} I${e.stats.I} A${e.stats.A} Ld${e.stats.Ld}\n`;
+        txt += `   Wargear: ${e.wargear || '—'}\n   Rules: ${e.rules || '—'}\n`;
+      });
+      txt += `\n--- BOSS FIGHT ---\n`;
+      txt += `${bossUnit.value.name} — ${bossUnit.value.pts} pts\n`;
+      if (bossUnit.value.stats) { const s = bossUnit.value.stats; txt += `  Stats: M${s.M} WS${s.WS} BS${s.BS} S${s.S} T${s.T} W${s.W} I${s.I} A${s.A} Ld${s.Ld}\n`; }
+      txt += `  Wargear: ${bossUnit.value.wargear}\n  Rules: ${bossUnit.value.rules}\n`;
+      txt += `\n--- MISSIONS ---\n`;
+      company.missions.forEach((m,i) => {
+        txt += `Mission ${i+1}: ${m.scenario}\n`;
+        if (m.weatherOn) txt += `  Weather: ${m.weather}\n`;
+        if (m.randomEventsOn) txt += `  Random Events: ON\n`;
+        if (m.bossOn) txt += `  BOSS: ${bossUnit.value.name} (${bossUnit.value.pts} pts)\n`;
+      });
+      txt += `\n--- OBJECTIVES ---\n`;
+      if (currentPrimary.value.roll) txt += `Primary: [${currentPrimary.value.roll}] ${currentPrimary.value.name}\n  ${currentPrimary.value.desc}\n`;
+      if (currentSecondary.value.roll) txt += `Secondary: [${currentSecondary.value.roll}] ${currentSecondary.value.name}\n  ${currentSecondary.value.desc}\n`;
+      txt += `Alertness: ${alertness.value} | Primary completed: ${primaryCompleted.value} | Secondary completed: ${secondaryCompleted.value}\n`;
+      if (rewardsClaimed.value) txt += `Rewards: ${hazardPay.value}c + ${totalCampaignXP.value} XP\n`;
+      txt += `\n--- SEARCH TOKENS ---\n`;
+      searchState.tokens.forEach((t,i) => {
+        txt += `Token #${i+1}: ${t.group} ${t.num || '(player picks)'}`;
+        if (t.content) txt += ` → ${t.content.label}: ${t.content.detail}`;
+        txt += `\n`;
+      });
+      txt += `\n--- ENEMY WAVES ---\n`;
+      txt += `Wave target: ${waveTargetPts()} pts | Current wave: ${waveState.currentWave}\n`;
+      txt += `Alertness: ${waveState.alertness}/6 | Awareness: ${waveState.awareness}\n`;
+      waveState.sentries.forEach(s => txt += `Sentry: ${s.unit.name} (${s.quarter ? 'Q'+s.quarter : 'player picks'})\n`);
+      waveState.reinforcements.forEach(r => txt += `Reinf: ${r.unit.name} (${r.corner ? 'C'+r.corner : 'player picks'})\n`);
+      txt += `\n--- RANDOM EVENTS ---\n`;
+      eventLog.value.forEach(e => txt += `[${e.d1}][${e.d2}] ${e.name} — ${e.desc}\n`);
+      const b = new Blob([txt], { type:'text/plain;charset=utf-8' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(b);
+      a.download = `Campaign_${company.squadName || 'Hero'}.txt`; a.click();
+    }
+
+    function exportCampaignPDF() {
+      if (!window.jspdf) return alert("jsPDF not loaded.");
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFontSize(16); doc.text('ASTARTES CAMPAIGN', 20, 20);
+      doc.setFontSize(10);
+      doc.text(`Squad: ${company.squadName || 'Unnamed'}`, 20, 30);
+      doc.text(`Points: ${squadTotalPts.value} pts | Enemy: ${company.faction} / ${company.difficulty}`, 20, 36);
+      let y = 46;
+      doc.setFontSize(12); doc.text('ROSTER', 20, y); y += 6;
+      doc.setFontSize(9);
+      company.roster.forEach(c => { doc.text(`- ${c.name || 'Unnamed'} (${c.chapter}) — ${calcCharCost(c)} pts`, 20, y); y += 5; });
+      y += 4;
+      doc.setFontSize(12); doc.text('ENEMY FORCE', 20, y); y += 6;
+      doc.setFontSize(9);
+      company.enemy.forEach(e => {
+        doc.text(`- ${e.name} — ${e.pts} pts`, 20, y); y += 4;
+        if (e.stats) { doc.text(`  M${e.stats.M} WS${e.stats.WS} BS${e.stats.BS} S${e.stats.S} T${e.stats.T} W${e.stats.W} I${e.stats.I} A${e.stats.A} Ld${e.stats.Ld}`, 22, y); y += 4; }
+      });
+      y += 4;
+      doc.setFontSize(12); doc.text('BOSS FIGHT', 20, y); y += 6;
+      doc.setFontSize(9);
+      doc.text(`${bossUnit.value.name} — ${bossUnit.value.pts} pts`, 20, y); y += 5;
+      if (bossUnit.value.stats) { const s = bossUnit.value.stats; doc.text(`M${s.M} WS${s.WS} BS${s.BS} S${s.S} T${s.T} W${s.W} I${s.I} A${s.A} Ld${s.Ld}`, 20, y); y += 5; }
+      doc.text(`Wargear: ${bossUnit.value.wargear}`, 20, y); y += 5;
+      doc.text(`Rules: ${bossUnit.value.rules}`, 20, y);
+      doc.save(`Campaign_${company.squadName || 'Hero'}.pdf`);
+    }
+
+    onMounted(() => { loadLocal(); });
+
+    return {
+      // Builder
+      char, chapters, classes, wargearCats, currentRank, innateRules,
+      showLibrary, library, wargearWarning,
+      availableExp, spentExp, totalCost, selectedProfiles,
+      usedHands, maxHands, meleeAttacks, isBlocked, tryAdd, removeItem,
+      increaseStat, decreaseStat, toggleSkill, applyPreset, resetChar,
+      toggleTheme, saveNewCharacter, loadCharacter, deleteCharacter,
+      exportTXT, exportPDF, getSkillDesc, skillList, availableSkills: skillList, baseStats,
+      // Company
+      tab, company, factions, difficulties, missionScenarios, weatherTable,
+      squadTotalPts, enemyTargetPts, enemyTotalPts, enemyBreakdown, bossUnit,
+      calcCharCost, addToRoster, generateEnemy,
+      exportCampaignTXT, exportCampaignPDF,
+      // Objectives
+      currentPrimary, currentSecondary, primaryCompleted, secondaryCompleted,
+      alertness, chosenCorner, rewardsClaimed,
+      rollPrimaryObjective, completePrimary, completeSecondary, resetObjectives,
+      diffLevel, hazardPay, primaryXP, secondaryXP, totalCampaignXP, claimRewards,
+      // Injuries / Pre-Game
+      rollInjury,
+      preGameState, runPreGameChecks, clearPreGame, missionReadyRoster,
+      // Import TXT
+      rosterFileInput, importRosterTXT, onRosterFileSelected,
+      // Search Tokens
+      searchState, rollSearchTokens, revealSearchToken,
+      // Waves
+      waveState, waveTargetPts, deploySentries, deployReinforcements, tickAlertness, awarenessTable,
+      // Challenges
+      challengeState, todTable, weatherChallengeTable,
+      // Hero Deployment
+      heroDeployment, rollHeroDeployment,
+      // Random Events
+      randomEvents, eventLog, lastEvent, rollRandomEvent
+    };
+  }
+});
+
+app.mount("#app");
+</script>
+</body>
+</html>
